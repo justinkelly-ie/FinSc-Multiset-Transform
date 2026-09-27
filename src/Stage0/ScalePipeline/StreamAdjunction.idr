@@ -1,6 +1,6 @@
-module Core.ScalePipeline.StreamAdjunction
+module Stage0.ScalePipeline.StreamAdjunction
 
-import Math.OnSeq.FusedStream
+import Stage0.OnSeq.FusedStream
 import Data.List
 import Data.SortedMap
 

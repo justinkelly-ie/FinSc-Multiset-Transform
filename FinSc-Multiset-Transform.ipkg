@@ -7,17 +7,24 @@ depends = FinSc-Multiset-Core, base, linear
 sourcedir = "src"
 
 modules = Transform,
-          Core.Goh,
-          Core.LinearBuffer,
-          Core.ScaleCategory,
-          Core.ScalePipeline,
-          Core.ScalePipeline.StreamAdjunction,
-          Core.MaxelTransform,
-          Core.UniverseState,
-          Math.Infinitesimal,
-          Math.LawAlgebra,
-          Math.OnSeq.ConjugateAdjunction,
-          Math.OnSeq.SpreadStream,
-          Math.Transform.Reflect.Goh
-
-
+          Stage0.LinearBuffer,
+          Stage0.ScalePipeline.StreamAdjunction,
+          Stage0.UniverseState,
+          Stage1.Goh,
+          Stage1.MaxelTransform,
+          Stage1.ScaleCategory,
+          Stage1.ScalePipeline,
+          Stage1.Multiset.Dynamics,
+          Stage1.Multiset.StreamTransducer,
+          Stage1.Multiset.QuadStreamPipeline,
+          Stage1.Math.Infinitesimal,
+          Stage1.Math.LawAlgebra,
+          Stage1.Math.OnSeq.ConjugateAdjunction,
+          Stage1.Math.OnSeq.SpreadStream,
+          Stage1.Math.Transform.Reflect.Goh,
+          Stage1.Math.Transform.MultisetFilter,
+          Stage1.Math.Transform.ChromogeometryMetric,
+          Stage1.Math.Transform.QuadStreamAdjunction,
+          Stage1.ActiveInference,
+          Stage1.StratifiedState,
+          Stage1.TypeTheory.ReflectionMacro

@@ -1,9 +1,9 @@
-module Core.ScaleCategory
+module Stage1.ScaleCategory
 
-import Core.BoxInt
-import Core.Multiset
-import Core.UnixelFraction
-import Core.MaxelTransform
+import Stage0.BoxInt
+import Stage0.Multiset
+import Stage1.UnixelFraction
+import Stage1.MaxelTransform
 
 %default total
 
@@ -25,6 +25,7 @@ Eq ScaleLevel where
   _ == _ = False
 
 ||| A ScaleFunctor represents a structure-preserving functorial scale transformation.
+||| 2LTT Staging Operation: Lifting (⇑A) - Transporting microstate token types into macro-scale functorial spaces.
 public export
 record ScaleFunctor (src : ScaleLevel) (tgt : ScaleLevel) (srcToken : Type) (tgtToken : Type) where
   constructor MkScaleFunctor

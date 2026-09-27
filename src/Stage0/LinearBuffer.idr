@@ -1,6 +1,6 @@
-module Core.LinearBuffer
+module Stage0.LinearBuffer
 
-import Core.BoxInt
+import Stage0.BoxInt
 import Data.Vect
 
 %default total

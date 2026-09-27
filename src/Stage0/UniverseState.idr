@@ -1,8 +1,8 @@
-module Core.UniverseState
+module Stage0.UniverseState
 
 import Data.Vect
-import Core.BoxInt
-import Core.VexelMaxel
+import Stage0.BoxInt
+import Stage1.TypeTheory.Smooth13
 
 %default total
 
@@ -49,39 +49,29 @@ stepUniverseLinear (MkUniverseState vm de dm) newMatter =
   in MkUniverseState updatedVM de updatedDM
 
 ------------------------------------------------------------------------
--- UNIFIED DIRECT-SUM MULTISET
+-- 2. TYPE-LEVEL 13-SMOOTH BOUNDED UNIVERSE STATE
 ------------------------------------------------------------------------
 
-||| Bounded direct-sum multiset encoding 3D Boxel, 2D Maxel, and 1D Vexel.
-public export
-record CosmicMultiset where
-  constructor MkCosmicMultiset
-  visible    : Boxel
-  darkEnergy : Maxel
-  darkMatter : Vexel
+||| A UniverseState whose total capacity (vm + de + dm) is certified 13-smooth at compile time
+public export covering
+record Smooth13UniverseState (vm : Nat) (de : Nat) (dm : Nat) where
+  constructor MkSmooth13UniverseState
+  state       : UniverseState vm de dm
+  smoothProof : Smooth13Dimension (vm + de + dm)
 
-||| Calculates total active budget across the direct-sum multiset.
-public export
-totalCosmicMultisetBudget : CosmicMultiset -> Nat
-totalCosmicMultisetBudget (MkCosmicMultiset (MkBoxel v) (MkMaxel de) (MkVexel dm)) =
-  length v + length de + length dm
+public export covering
+{vm, de, dm : Nat} -> Eq (Smooth13UniverseState vm de dm) where
+  (MkSmooth13UniverseState s1 _) == (MkSmooth13UniverseState s2 _) =
+    s1.visibleMatter == s2.visibleMatter &&
+    s1.darkEnergy == s2.darkEnergy &&
+    s1.darkMatter == s2.darkMatter
 
-||| Embeds a UniverseState into the CosmicMultiset.
-public export
-stateToCosmicMultiset : {vm, de, dm : Nat} -> UniverseState vm de dm -> CosmicMultiset
-stateToCosmicMultiset (MkUniverseState vmVect deVect dmVect) =
-  let vmTerms = toList (tabulate (\idx => (MkVoxel (finToNat idx + 1) 1 1, index idx vmVect)))
-      deTerms = toList (tabulate (\idx => (MkPixel (finToNat idx + 1) 1, index idx deVect)))
-      dmTerms = toList (tabulate (\idx => (MkUnixel (finToNat idx + 1), index idx dmVect)))
-  in MkCosmicMultiset (canonicalizeBoxel (MkBoxel vmTerms)) (canonicalizeMaxel (MkMaxel deTerms)) (canonicalizeVexel (MkVexel dmTerms))
+public export covering
+{vm, de, dm : Nat} -> Show (Smooth13UniverseState vm de dm) where
+  show (MkSmooth13UniverseState _ _) = "Smooth13UniverseState(" ++ show (vm + de + dm) ++ ")"
 
-||| Audits total state budget for 210 = 27 + 128 + 55.
-public export
-auditCosmicMultisetBudgetProof : Bool
-auditCosmicMultisetBudgetProof =
-  let mockState = MkUniverseState {vmSize=27} {deSize=128} {dmSize=55}
-                    (replicate 27 (intToBoxInt 1))
-                    (replicate 128 (intToBoxInt 1))
-                    (replicate 55 (intToBoxInt 1))
-      cMultiset = stateToCosmicMultiset mockState
-  in totalCosmicMultisetBudget cMultiset == 210
+||| Seed constructor for a 13-smooth certified vacuum state
+public export covering
+seedSmoothCosmicVacuum : (vm : Nat) -> (de : Nat) -> (dm : Nat) -> Smooth13Witness (vm + de + dm) -> Smooth13UniverseState vm de dm
+seedSmoothCosmicVacuum vm de dm prf =
+  MkSmooth13UniverseState (seedCosmicVacuum vm de dm) (MkSmooth13Dimension {n=vm + de + dm} prf)

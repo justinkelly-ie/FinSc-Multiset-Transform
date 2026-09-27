@@ -1,15 +1,17 @@
-module Math.OnSeq.SpreadStream
+module Stage1.Math.OnSeq.SpreadStream
 
 import Data.List
 import Data.Vect
 import Data.Nat
 import Data.Fuel
-import Core.BoxInt
-import Core.UnixelFraction
-import Core.Goh
-import Core.Category.Adjunction
-import Math.OnSeq.FusedStream
-import public Core.FourGeometries
+import Stage0.BoxInt
+import Stage0.Multiset
+import Stage1.UnixelFraction
+import Stage1.Goh
+import Stage1.Category.Adjunction
+import Stage0.OnSeq.FusedStream
+import Stage1.TypeTheory.MultisetLevel
+import public Stage1.FourGeometries
 
 %default total
 
@@ -151,8 +153,82 @@ public export
 gohSupportSize : (d : Nat) -> Nat
 gohSupportSize d = totient d
 
+||| Formal Chromogeometric Sector Budget Record tracking degree allocation across Blue, Red, and Green metrics
+public export
+record ChromogeometricSectorBudget where
+  constructor MkChromogeometricSectorBudget
+  blueElliptic     : Nat
+  redHyperbolic    : Nat
+  greenParabolic   : Nat
+
+public export
+Eq ChromogeometricSectorBudget where
+  (MkChromogeometricSectorBudget b1 r1 g1) == (MkChromogeometricSectorBudget b2 r2 g2) =
+    b1 == b2 && r1 == r2 && g1 == g2
+
+||| Computes the total chromogeometric degree capacity
+public export
+totalChromogeometricCapacity : ChromogeometricSectorBudget -> Nat
+totalChromogeometricCapacity (MkChromogeometricSectorBudget b r g) = b + r + g
+
+||| Computes exact ChromogeometricSectorBudget from a list of GohMultiset factor bags
+public export
+computeChromogeometricBudget : List GohMultiset -> ChromogeometricSectorBudget
+computeChromogeometricBudget bags =
+  let (b, r, g) = chromogeometricBudgetExhaustion bags
+  in MkChromogeometricSectorBudget b r g
+
+||| Verifies that Chromogeometric Sector Budget total capacity equals dimension N (b + r + g = N)
+public export
+prop_chromogeometricBudgetConservation : Nat -> Bool
+prop_chromogeometricBudgetConservation Z = True
+prop_chromogeometricBudgetConservation (S n) =
+  let dim = S n
+      divs = divisors dim
+      bags = map (\d => AddFactor (makeGohFactor d) EmptyBag) divs
+      budget = computeChromogeometricBudget bags
+  in totalChromogeometricCapacity budget == dim
+
 ------------------------------------------------------------------------
--- 6. COMPILE-TIME REFLECTION & INVARIANT AUDITOR WITNESSES
+-- 6. PRIMORIAL 210 UNFOLDING BUDGET & 4GEOMETRIES STAGING
+------------------------------------------------------------------------
+
+||| Formal Primorial 210 Unfolding Budget Record (27 Blue Elliptic 3D + 128 Red Hyperbolic 2D + 55 Green Parabolic Sink = 210)
+public export
+record Primorial210UnfoldingBudget where
+  constructor MkPrimorial210UnfoldingBudget
+  blueElliptic3D     : Nat  -- 3^3 = 27 3D Spatial Volume States
+  redHyperbolic2D    : Nat  -- 2^7 = 128 2D Spectral Phase States
+  greenParabolicSink : Nat  -- 55 Lightlike Dissipation Remainder States
+
+public export
+Eq Primorial210UnfoldingBudget where
+  (MkPrimorial210UnfoldingBudget b1 r1 g1) == (MkPrimorial210UnfoldingBudget b2 r2 g2) =
+    b1 == b2 && r1 == r2 && g1 == g2
+
+||| Computes total capacity of a Primorial 210 Unfolding Budget
+public export
+totalPrimorial210Capacity : Primorial210UnfoldingBudget -> Nat
+totalPrimorial210Capacity (MkPrimorial210UnfoldingBudget b r g) = b + r + g
+
+||| Classifies a stage-indexed LevelBox GohMultiset into its 4Geometries FundamentalGeometry sector
+public export
+classifyStageGeometry : {n : Nat} -> LevelBox n GohMultiset -> FundamentalGeometry
+classifyStageGeometry (MkLevelBox (MkBox [])) = SubstrateGeom
+classifyStageGeometry (MkLevelBox (MkBox ((g, _) :: _))) = classifySpreadStreamSector g
+
+||| Verifies that Primorial 210 Goh Cyclotomic Factor Tree Unfolding preserves total capacity 210 (27 + 128 + 55 = 210)
+public export
+prop_primorial210UnfoldingInvariance : Bool
+prop_primorial210UnfoldingInvariance =
+  let divs210 = divisors 210
+      bags210 = map (\d => AddFactor (makeGohFactor d) EmptyBag) divs210
+      budget = computeChromogeometricBudget bags210
+      primBudget = MkPrimorial210UnfoldingBudget budget.blueElliptic budget.redHyperbolic budget.greenParabolic
+  in totalPrimorial210Capacity primBudget == 210
+
+------------------------------------------------------------------------
+-- 7. COMPILE-TIME REFLECTION & INVARIANT AUDITOR WITNESSES
 ------------------------------------------------------------------------
 
 ||| Static compiler proof witness verifying that Goh factor stream unfolding matches exact divisor count.

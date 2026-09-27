@@ -1,10 +1,10 @@
-module Math.OnSeq.ConjugateAdjunction
+module Stage1.Math.OnSeq.ConjugateAdjunction
 
-import public Math.OnSeq.FusedStream
-import public Math.Multiset
-import public Core.Multiset
-import public Core.TypeTheory.TwoLevel
-import public Core.Category.Adjunction
+import public Stage0.OnSeq.FusedStream
+import public Stage0.Multiset
+import public Stage0.Multiset
+import public Stage1.TypeTheory.TwoLevel
+import public Stage1.Category.Adjunction
 import Data.Fuel
 
 %default total
