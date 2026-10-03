@@ -66,13 +66,13 @@ generateIndices (S k) = generateIndices k ++ [k]
 
 ||| Deforested stream evaluation of total mass conservation over N multiset dynamics iterations
 ||| using explicit 2LTT quoteOnSeq and spliceOnSeqToStream combinators.
-public export covering
+public export
 fusedMultisetStreamTotalMass : Fuel -> OnSeq BoxInt -> Nat -> BoxInt
 fusedMultisetStreamTotalMass f seq steps =
   let strm         = stream (generateIndices steps)
       strmStencils = mapStream (onSeqSpatialStencil seq) strm
       strmMasses   = transduceStream multisetStreamTransducer strmStencils
-  in foldStream addBox (intToBoxInt 0) strmMasses
+  in foldStreamFuel f addBox (intToBoxInt 0) strmMasses
 
 ||| Proof witness auditing total mass conservation across deforested streaming multiset steps.
 public export

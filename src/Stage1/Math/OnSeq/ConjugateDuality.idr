@@ -22,9 +22,31 @@ ConjugateNatTrans f g l = {a : Type} -> l (f a) -> g (l a)
 -- 2. 2LTT STRICT REFLECTION HYLOMORPHISM (MAMAMORPHISM)
 --------------------------------------------------------------------------------
 
+||| Executes a total Nat fuel-bounded 2LTT Conjugate Hylomorphism (Mamamorphism).
+||| Eliminates partiality and covering annotations via structural recursion on fuel.
+public export
+fusedConjugateHyloNat : {0 c, s, a : Type} ->
+                        (fuel : Nat) ->
+                        (coalgebra : c -> Step c a) ->
+                        (algebra : Step s a -> s) ->
+                        (bridge : a -> a) ->
+                        s -> c -> s
+fusedConjugateHyloNat Z _ _ _ acc _ = acc
+fusedConjugateHyloNat (S f) coalg alg bridge acc seed = loop f seed acc
+  where
+    loop : Nat -> c -> s -> s
+    loop Z _ currentAcc = currentAcc
+    loop (S f') st currentAcc = case coalg st of
+      Done => currentAcc
+      Skip st' => loop f' st' currentAcc
+      Yield x st' =>
+        let x' = bridge x
+            newAcc = alg (Yield x' currentAcc)
+        in loop f' st' newAcc
+
 ||| Executes a 2LTT Conjugate Hylomorphism (Mamamorphism) bridging strict outer streams
 ||| (StrictLevel L) to inner homotopy physical states (HomotopyLevel R) via strict reflection.
-||| All type parameters {0 c, s, a : Type} are annotated with QTT 0 for 100% runtime erasure.
+||| For total constructivism without covering annotations, use fusedConjugateHyloNat.
 public export covering
 fusedConjugateHylo : {0 c, s, a : Type} ->
                      Fuel ->
@@ -71,7 +93,7 @@ TwoLevelConjugateDuality = TwoLevelConjugateAdjunction
 public export
 auditConjugateAdjunctionProof : Bool
 auditConjugateAdjunctionProof =
-  let res = fusedConjugateHylo (limit 100)
+  let res = fusedConjugateHyloNat 100
               (\xs => case xs of
                         [] => Done
                         (y :: ys) => Yield y ys)

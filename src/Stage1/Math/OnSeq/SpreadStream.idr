@@ -125,7 +125,25 @@ classifySpreadStreamSector (AddFactor {deg} _ _) =
   else ParabolicGeom
 
 ||| Evaluates an allocation-free deforested Goh spread polynomial stream generator under 
+||| total Nat fuel-bounded category-theoretic adjunction folds (Total Adjoint Hylomorphism).
+public export
+fusedSpreadHylomorphismNat : (fuel : Nat) ->
+                              (s -> Step s GohMultiset) ->
+                              (GohMultiset -> b -> b) ->
+                              b -> s -> b
+fusedSpreadHylomorphismNat Z _ _ acc _ = acc
+fusedSpreadHylomorphismNat (S f) next consumerFold acc seed = loop f seed acc
+  where
+    loop : Nat -> s -> b -> b
+    loop Z _ currentAcc = currentAcc
+    loop (S f') st currentAcc = case next st of
+      Done => currentAcc
+      Skip st' => loop f' st' currentAcc
+      Yield bag st' => loop f' st' (consumerFold bag currentAcc)
+
+||| Evaluates an allocation-free deforested Goh spread polynomial stream generator under 
 ||| category-theoretic adjunction folds (Adjoint Hylomorphism).
+||| For guaranteed totality, use fusedSpreadHylomorphismNat.
 public export covering
 fusedSpreadHylomorphism : Fuel ->
                           (s -> Step s GohMultiset) ->
