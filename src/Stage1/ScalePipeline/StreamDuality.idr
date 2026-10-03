@@ -1,4 +1,4 @@
-module Stage0.ScalePipeline.StreamAdjunction
+module Stage1.ScalePipeline.StreamDuality
 
 import Stage0.OnSeq.FusedStream
 import Data.List
@@ -7,7 +7,7 @@ import Data.SortedMap
 %default total
 
 ------------------------------------------------------------------------
--- 1. FREE / FORGETFUL ADJUNCTION MONAD & COMONAD (FreeWave ⊣ ForgetfulMonoid)
+-- 1. FREE / FORGETFUL DUALITY (FreeWave ⇋ ForgetfulMonoid)
 ------------------------------------------------------------------------
 
 ||| Free wave multiset representation carrying coordinate payloads and amplitudes.
@@ -28,11 +28,16 @@ public export
 Functor ForgetfulMonoid where
   map f (MkMonoidView x) = MkMonoidView (f x)
 
-||| Standard Category-Theoretic Adjunction Interface.
+||| Discrete Wave Duality Interface (replaces category-theoretic Adjunction).
 public export
 interface (Functor f, Functor g) => Adjunction f g where
   unit   : a -> g (f a)
   counit : f (g a) -> a
+
+||| Canonical 2LTT Wave Duality alias
+public export
+WaveDuality : (Type -> Type) -> (Type -> Type) -> Type
+WaveDuality = Adjunction
 
 public export covering
 Adjunction FreeWave ForgetfulMonoid where
@@ -41,10 +46,10 @@ Adjunction FreeWave ForgetfulMonoid where
   counit (MkWave []) = assert_total (idris_crash "Absurd Empty State in Adjunction Counit")
 
 ------------------------------------------------------------------------
--- 2. DUAL WAVE COMONAD (FreeWave ∘ ForgetfulMonoid)
+-- 2. DUAL WAVE CONTEXT / STENCIL (FreeWave ∘ ForgetfulMonoid)
 ------------------------------------------------------------------------
 
-||| Standard Category-Theoretic Comonad Interface.
+||| Discrete Spatial Stencil Interface (replaces category-theoretic Comonad).
 public export
 interface Functor w => Comonad w where
   extract  : w a -> a
@@ -52,7 +57,12 @@ interface Functor w => Comonad w where
   extend   : (w a -> b) -> w a -> w b
   extend f wa = map f (duplicate wa)
 
-||| Dual Wave Context induced by Adjunction F ⊣ G.
+||| Canonical 2LTT Wave Stencil alias
+public export
+WaveStencil : (Type -> Type) -> Type
+WaveStencil = Comonad
+
+||| Dual Wave Context induced by Duality FreeWave ⇋ ForgetfulMonoid.
 public export
 WaveContext : Type -> Type
 WaveContext a = FreeWave (ForgetfulMonoid a)
@@ -116,7 +126,7 @@ Monad StateTransition where
         map (\(boxel, innerI) => (boxel, innerI * outerI)) inner
 
 ------------------------------------------------------------------------
--- 4. 3D TERNARY SHIFT & SPATIAL MONAD TRANSITION DRIVER (T^3 CANVAS)
+-- 4. 3D TERNARY SHIFT & SPATIAL TRANSITION DRIVER (T^3 CANVAS)
 ------------------------------------------------------------------------
 
 ||| Spatial Boxel Canvas representation carrying 3D toroidal coordinates (x, y, z) and intensity.
@@ -168,7 +178,7 @@ computeQuadrance Hyperbolic (dx, dy, dz) = cast (dx * dx + dy * dy - dz * dz + 1
 computeQuadrance Parabolic  (dx, dy, dz) = cast (dx * dx + dy * dy + 1)
 computeQuadrance Substrate  _            = 1
 
-||| The Monadic evolution operator over 3D Toroidal Boxel Canvas T^3.
+||| The evolution operator over 3D Toroidal Boxel Canvas T^3.
 ||| Transforms a Boxel spatial state according to a TernaryMatrix operator key and sector tag.
 public export
 driveSpatialUpdate : GeometrySector -> TernaryMatrix -> Boxel -> StateTransition Boxel

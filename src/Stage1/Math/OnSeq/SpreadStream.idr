@@ -11,6 +11,7 @@ import Stage1.Goh
 import Stage1.Category.Adjunction
 import Stage0.OnSeq.FusedStream
 import Stage1.TypeTheory.MultisetLevel
+import Stage1.TypeTheory.Staging
 import public Stage1.FourGeometries
 
 %default total
@@ -24,6 +25,21 @@ public export
 divisors : Nat -> List Nat
 divisors Z = []
 divisors (S n) = filter (\d => (S n) `mod` d == Z) [1..S n]
+
+||| Deforested stream of divisors of n from 1 up to n (Coutts et al. 2007 Stream Fusion).
+||| Eliminates intermediate List allocation completely.
+public export
+divisorStream : Nat -> FusedStream Nat
+divisorStream Z = stream []
+divisorStream (S n) = unfoldStream nextStep (1, S n)
+  where
+    nextStep : (Nat, Nat) -> Step (Nat, Nat) Nat
+    nextStep (cand, target) =
+      if cand > target then Done
+      else if target `mod` cand == Z then
+        Yield cand (S cand, target)
+      else
+        Skip (S cand, target)
 
 ------------------------------------------------------------------------
 -- 2. DEFORESTED GOH SPREAD POLYNOMIAL STREAM GENERATORS
@@ -45,6 +61,13 @@ unfoldGohFactorStream (S n) =
       bags = map (\d => AddFactor (makeGohFactor d) EmptyBag) divs
   in stream bags
 
+||| Fully deforested unfolding of frequency index n into Goh factors without intermediate List buffers.
+public export
+unfoldGohFactorStreamDeforested : Nat -> FusedStream GohMultiset
+unfoldGohFactorStreamDeforested Z = stream []
+unfoldGohFactorStreamDeforested (S n) =
+  mapStream (\d => AddFactor (makeGohFactor d) EmptyBag) (divisorStream (S n))
+
 ||| Generates an infinite/fueled deforested stream of Goh multiset spread polynomials S_0, S_1, S_2, ...
 public export
 streamSpreadPolynomials : Fuel -> FusedStream GohMultiset
@@ -53,6 +76,31 @@ streamSpreadPolynomials (More f) =
   let generateSteps : Nat -> List GohMultiset
       generateSteps k = [ AddFactor (makeGohFactor d) EmptyBag | d <- divisors (S k) ]
   in stream (concatMap generateSteps [1..38])
+
+||| Generates a structurally total bounded deforested stream of Goh multiset spread polynomials up to bound d.
+||| Structurally total without requiring external Fuel.
+public export
+streamSpreadPolynomialsBounded : (degreeBound : Nat) -> FusedStream GohMultiset
+streamSpreadPolynomialsBounded bound =
+  let generateSteps : Nat -> List GohMultiset
+      generateSteps k = [ AddFactor (makeGohFactor d) EmptyBag | d <- divisors (S k) ]
+  in stream (concatMap generateSteps [1..bound])
+
+||| Fully deforested, structurally total stream of Goh multiset spread polynomials up to bound d.
+||| Operates via pure register steppers with zero List allocations.
+public export
+streamSpreadPolynomialsDeforested : (degreeBound : Nat) -> FusedStream GohMultiset
+streamSpreadPolynomialsDeforested bound = unfoldStream nextStep (1, 1, bound)
+  where
+    nextStep : (Nat, Nat, Nat) -> Step (Nat, Nat, Nat) GohMultiset
+    nextStep (k, d, maxK) =
+      if k > maxK then Done
+      else if d > k then Skip (S k, 1, maxK)
+      else if k `mod` d == Z then
+        Yield (AddFactor (makeGohFactor d) EmptyBag) (k, S d, maxK)
+      else
+        Skip (k, S d, maxK)
+
 
 ------------------------------------------------------------------------
 -- 3. CATEGORY-THEORETIC SPREAD STREAM ADJUNCTION (L_S ⊣ R_S)
@@ -93,6 +141,12 @@ fusedSpreadHylomorphism (More f') next consumerFold acc seed = loop f' seed acc
       Done => currentAcc
       Skip st' => loop f'' st' currentAcc
       Yield bag st' => loop f'' st' (consumerFold bag currentAcc)
+
+||| Evaluates a deforested Goh spread polynomial list fold structurally without Fuel.
+public export
+structuralSpreadFold : List GohMultiset -> (GohMultiset -> b -> b) -> b -> b
+structuralSpreadFold [] _ acc = acc
+structuralSpreadFold (x :: xs) f acc = structuralSpreadFold xs f (f x acc)
 
 ------------------------------------------------------------------------
 -- 5. EULER TOTIENT & PRIME FACTOR SPECTRUM DECOMPOSITION
@@ -254,3 +308,27 @@ auditWildbergerSupportPartitionProof =
   let divs6 = divisors 6
       suppSum6 = sum (map gohSupportSize divs6)
   in suppSum6 == 6
+
+------------------------------------------------------------------------
+-- 8. 2LTT STAGED MULTI-SCALE HORNER SPREAD COMPOSITION (Z_mn = Z_m ∘ Z_n)
+------------------------------------------------------------------------
+
+||| Evaluates composite spread polynomial transformation Z_mn(x) = Z_m(Z_n(x))
+||| according to the Cigler-Herbig (2026) spread polynomial semigroup composition theorem.
+public export
+evalSpreadComposeMultiset : GohMultiset -> GohMultiset -> UnixelFraction -> UnixelFraction
+evalSpreadComposeMultiset zm zn s =
+  evalGohMultiset zm (evalGohMultiset zn s)
+
+||| 2LTT Staged Composite Spread Scale Transformation Transducer.
+||| Pre-evaluates composite scale transitions at compile-time (Stage 1),
+||| emitting an unrolled Horner polynomial fold for runtime (Stage 0).
+public export
+stagedSpreadComposeJump : GohMultiset -> GohMultiset -> UnixelFraction -> Code UnixelFraction
+stagedSpreadComposeJump zm zn s = quote (evalSpreadComposeMultiset zm zn s)
+
+||| QTT 0 Erased Proof Witness: Staged Spread Composition Evaluates to Object Code Definitionally (~⟨t⟩ ≡ t).
+public export
+0 prfStagedSpreadComposeJump : (zm : GohMultiset) -> (zn : GohMultiset) -> (s : UnixelFraction) ->
+                              splice (stagedSpreadComposeJump zm zn s) = evalSpreadComposeMultiset zm zn s
+prfStagedSpreadComposeJump zm zn s = inverseSpliceQuote (evalSpreadComposeMultiset zm zn s)

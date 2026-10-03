@@ -6,6 +6,7 @@ import Stage0.UniverseState
 import Stage1.UnixelFraction
 import Stage1.MaxelTransform
 import Stage1.TypeTheory.Smooth13
+import Stage1.Smooth13UniverseState
 import Stage1.Order.Preorder
 import Stage0.OnSeq.FusedStream
 import Data.Fuel
@@ -17,11 +18,6 @@ import Data.List
 -- 1. TYPED LAW ALGEBRA PUSHFORWARD & PULLBACK OPERATORS
 ------------------------------------------------------------------------
 
-||| Evaluates the direct image pushforward of a domain predicate P:
-||| (f_* P)(x) = P(x).
-public export
-pushforwardPredicate : (a -> Bool) -> (a -> Bool)
-pushforwardPredicate pred x = pred x
 
 ------------------------------------------------------------------------
 -- 2. LAW ALGEBRA MONOID
@@ -55,15 +51,39 @@ public export covering
 -- 3. FORMAL INVARIANT AUDIT PROOFS
 ------------------------------------------------------------------------
 
-||| QTT 0 erased proof witness auditing the Law Algebra Monoid (M1 • M2 = M1 ∪ M2).
+||| QTT 0 erased proof witness verifying the Left Identity of the Law Algebra Monoid:
+||| (emptyBox • m) = m definitionally for all multiset law states.
 public export
-0 prfLawAlgebraMonoidIdentity : True = True
-prfLawAlgebraMonoidIdentity = Refl
+0 prfLawAlgebraMonoidLeftIdentity : Eq a => (m : Box a) -> combineLaws (Stage0.Multiset.emptyBox {a}) m = m
+prfLawAlgebraMonoidLeftIdentity (MkBox ys) = Refl
 
-||| Static audit witness for Law Algebra Monoid.
+||| QTT 0 erased proof witness verifying the Right Identity on the canonical empty law aggregation:
+||| (emptyBox • emptyBox) = emptyBox definitionally.
+public export
+0 prfLawAlgebraMonoidEmptyRightIdentity : Eq a => combineLaws (Stage0.Multiset.emptyBox {a}) (Stage0.Multiset.emptyBox {a}) = Stage0.Multiset.emptyBox {a}
+prfLawAlgebraMonoidEmptyRightIdentity = Refl
+
+||| QTT 0 erased proof witness verifying that combining a single unixel law with emptyBox preserves the law:
+public export
+0 prfLawAlgebraMonoidUnixelLeftIdentity : Eq a => (x : a) -> (w : BoxInt) ->
+  combineLaws (Stage0.Multiset.emptyBox {a}) (unixelBox x w) = unixelBox x w
+prfLawAlgebraMonoidUnixelLeftIdentity x w = Refl
+
+
+||| Static audit witness for Law Algebra Monoid verifying left and right identities on concrete law boxes.
 public export
 auditLawAlgebraMonoidProof : Bool
-auditLawAlgebraMonoidProof = True
+auditLawAlgebraMonoidProof =
+  let m1 = unixelBox (intToBoxInt 1) (intToBoxInt 2)
+      resLeft = combineLaws emptyBox m1 == m1
+      resRight = combineLaws m1 emptyBox == m1
+  in resLeft && resRight
+
+||| QTT 0 erased proof witness auditing Law Algebra Monoid identity evaluation.
+public export
+0 verifyLawAlgebraMonoidAudit : Stage1.Math.LawAlgebra.auditLawAlgebraMonoidProof = True
+verifyLawAlgebraMonoidAudit = Refl
+
 
 ------------------------------------------------------------------------
 -- 4. COMPILE-TIME LAW ALGEBRA HOMOMORPHISM WITNESSES
@@ -134,4 +154,51 @@ fusedComputeTotalTransformedSum f s steps =
     (\step, acc => addBox (outValue step) acc)
     (intToBoxInt 0)
     (1, steps)
+
+||| Structurally total deforested multiset stream transformation without Fuel.
+||| Uses structural recursion directly over the input list of tokens.
+public export
+structuralMultisetTransformStream : BoxInt -> List BoxInt -> List BoxInt
+structuralMultisetTransformStream s steps =
+  map (\v => mulBox s v) steps
+
+||| Structurally total evaluation of total sum of transformed values across a list.
+public export
+structuralComputeTotalTransformedSum : BoxInt -> List BoxInt -> BoxInt
+structuralComputeTotalTransformedSum s steps =
+  foldl (\acc, v => addBox (mulBox s v) acc) (intToBoxInt 0) steps
+
+||| Pure multiset container evaluation: computes the transformed sum over Box a with integer multiplicities.
+||| Eliminates intermediate List buffers in favor of first-class Multiset Box arithmetic.
+public export
+boxComputeTotalTransformedSum : (a -> BoxInt) -> Box a -> BoxInt
+boxComputeTotalTransformedSum f (MkBox items) =
+  foldl (\acc, (k, w) => addBox (mulBox (f k) w) acc) (intToBoxInt 0) items
+
+||| Stream evaluation: folds directly over a FusedStream without allocating intermediate list buffers.
+public export covering
+fusedStreamTotalSum : FusedStream BoxInt -> BoxInt
+fusedStreamTotalSum st = foldStream addBox (intToBoxInt 0) st
+
+
+
+------------------------------------------------------------------------
+-- 6. LET-INSERTION & SHARING FOR STAGED MULTI-SCALE TRANSITIONS
+------------------------------------------------------------------------
+
+||| Evaluates a two-scale transition pipeline with let-binding sharing,
+||| preventing exponential code duplication during staging expansion.
+public export
+stagedTwoScaleTransition : (m1 : BoxInt -> BoxInt) -> (m2 : BoxInt -> BoxInt) -> BoxInt -> BoxInt
+stagedTwoScaleTransition m1 m2 x =
+  let intermediate = m1 x
+  in m2 intermediate
+
+||| Evaluates a three-scale transition pipeline with let-binding sharing.
+public export
+stagedThreeScaleTransition : (m1 : BoxInt -> BoxInt) -> (m2 : BoxInt -> BoxInt) -> (m3 : BoxInt -> BoxInt) -> BoxInt -> BoxInt
+stagedThreeScaleTransition m1 m2 m3 x =
+  let s1 = m1 x
+      s2 = m2 s1
+  in m3 s2
 

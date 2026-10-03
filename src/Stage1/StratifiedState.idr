@@ -8,6 +8,7 @@ import Stage0.UniverseState
 import Stage1.VexelMaxel
 import Stage1.TypeTheory.TwoLevel
 import Stage1.TypeTheory.Smooth13
+import Stage1.Smooth13UniverseState
 
 %default total
 
@@ -55,6 +56,14 @@ public export
 mkStratifiedUniverseState : UniverseState vm de dm -> StratifiedUniverseState vm de dm
 mkStratifiedUniverseState st = MkStratifiedUniverseState (MkStrict st) (MkHomotopy st)
 
+||| Equality compares only the strict (runtime) inner UniverseState contents.
+public export
+{vm, de, dm : Nat} -> Eq (StratifiedUniverseState vm de dm) where
+  (MkStratifiedUniverseState (MkStrict s1) _) == (MkStratifiedUniverseState (MkStrict s2) _) =
+    s1.visibleMatter == s2.visibleMatter &&
+    s1.darkEnergy    == s2.darkEnergy    &&
+    s1.darkMatter    == s2.darkMatter
+
 ||| Executes a 2LTT stratified state transition preserving strict outer deforested evaluation.
 public export
 stepStratifiedUniverse : {vm, de, dm, k : Nat} ->
@@ -74,7 +83,7 @@ record Smooth13StratifiedUniverseState (vm : Nat) (de : Nat) (dm : Nat) where
 
 public export covering
 {vm, de, dm : Nat} -> Eq (Smooth13StratifiedUniverseState vm de dm) where
-  (MkSmooth13StratifiedUniverseState s1 _) == (MkSmooth13StratifiedUniverseState s2 _) = True
+  (MkSmooth13StratifiedUniverseState s1 _) == (MkSmooth13StratifiedUniverseState s2 _) = s1 == s2
 
 public export covering
 {vm, de, dm : Nat} -> Show (Smooth13StratifiedUniverseState vm de dm) where
