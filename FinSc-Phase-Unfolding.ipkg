@@ -35,5 +35,6 @@ modules = PhaseUnfolding,
           Stage1.Staged.Specializer,
           Stage1.Reflect.InvariantAuditor,
           Stage1.Multiset.StreamDualityBridge,
-          Stage1.Multiset.PrimordialUnfolding
+          Stage1.Multiset.PrimordialUnfolding,
+          Stage1.MobiusRepIso
 
