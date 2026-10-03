@@ -3,51 +3,45 @@
 [![Idris 2 Verification](https://img.shields.io/badge/Idris_2-0.8.0-blue.svg)](https://www.idris-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Layer 2 Exact Rational Fields, Goh Polynomial Factorizations & 5-Stage Scale Category Engine for Idris 2**
+**Layer 2 Staged Scale Category, Goh Polynomial Factorization & Duality Streams for Idris 2**
 
-`FinSc-Multiset-Transform` forms the primary engine of **Layer 2** in the 10-layer constructive non-linear multiset science framework. It provides exact rational arithmetic (`UnixelFraction`), 1D Vexels & 2D Maxel matrices (`VexelMaxel`), monomorphic integer box matrix multiplication (`multBoxMatrix2D`), Goh spread polynomial factorizations (`GohMultiset`), $O(\log N)$ parallelized multiset trees (`MultisetTree`), and the formal 5-stage scale category (`ScaleCategory` & `ScalePipeline`).
+`FinSc-Multiset-Transform` forms **Layer 2** of the 10-layer constructive non-linear multiset science framework. Operating directly on top of the discrete kernel in `FinSc-Multiset-Core`, it provides the formal 5-stage scale category (`ScaleCategory` & `ScalePipeline`), Goh spread polynomial factorizations (`Stage1.Goh`), categorical duality streams (`ConjugateDuality`, `QuadStreamDuality`, `StreamDuality`), multiset active inference, and compile-time certified 13-smooth universe states.
 
 ---
 
-## 📦 Core Library Architecture & Modules
+## 📦 Core Architecture & Modules
 
-### 1. `Core.UnixelFraction`
-- **Exact Rational Fields:** Infinite-precision rational numbers (`UnixelFraction = Over num den`) replacing double-precision floating-point approximations.
-- **Zero-Defect Arithmetic:** Primitive operations (`add`, `sub`, `mult`, `div`) and Diophantine cross-multiplication comparison functions eliminating continuous drift.
-- **Macro Reflection:** Compile-time reflection auditor (`%macro auditUnixelFraction`) verifying rational identity invariants.
+### 1. Scale Category & Hierarchy (`Stage1.ScaleCategory`, `Stage1.ScaleHierarchy`, `Stage1.ScalePipeline`)
+- **Formal Scale Category:** Stratified physical scale levels (`ScaleLevel`: SubatomicLevel, HadronLevel, AtomLevel, MoleculeLevel, CellLevel) and functorial scale morphisms (`ScaleFunctor`).
+- **Functorial Composition:** Associative scale composition (`composeScaleFunctors`) mapping micro-quanta states to macroscopic structures.
+- **5-Stage Scale Pipeline:** Unified scale pipeline (`sf1_QuarkToHadron` .. `sfTotalFunctorialPipeline`) formalizing the physical ascent from subatomic color charges to complex biological cells.
 
-### 2. `Core.VexelMaxel`
-- **Multiset Vector/Matrix Tensors:** 1D `Vexel` vectors and 2D `Maxel` transformation matrices over basis states.
-- **$\beta$-Redex Contraction:** `actMaxelVexel` matrix-vector application, representing $\beta$-reduction as particle transformation.
-- **Monomorphic Matrix Arithmetic:** `multBoxMatrix2D` and `traceBoxMatrix2D` integer matrix operations bypassing typeclass method blocking during elaborator evaluation.
+### 2. Goh Polynomial Factorization (`Stage1.Goh`, `Stage1.Math.Transform.Reflect.Goh`)
+- **Spread Polynumbers:** Goh auxiliary polynomial factorization ($\Phi_d(s)$) over discrete Wildberger rational spread polynomials.
+- **Multiset Wave Propagation:** `GohMultiset` trees storing factorized spread polynomials, evaluating wave propagation and multi-turn particle evolutions via exact polynomial multiplication.
 
-### 3. `Core.ScaleCategory` & `Core.ScalePipeline`
-- **Formal Scale Category:** Physical scale levels (`ScaleLevel`: SubatomicLevel, HadronLevel, AtomLevel, MoleculeLevel, CellLevel) and functorial scale wrappers (`ScaleFunctor`).
-- **Functorial Composition:** Associative composition of scale functors (`composeScaleFunctors`) establishing scale-invariant mappings across physical domains.
-- **5-Stage Scale Pipeline:** Unified scale pipeline (`sf1_QuarkToHadron` .. `sfTotalFunctorialPipeline`) formalizing physical ascent from subatomic color charges to complex biological modules.
+### 3. Categorical Stream Dualities (`Stage1.ScalePipeline.StreamDuality`, `Stage1.Math.OnSeq.ConjugateDuality`, `Stage1.Math.Transform.QuadStreamDuality`)
+- **Stream Duality:** Hom-tensor stream isomorphisms preserving exact integer proof witnesses across scale boundaries.
+- **Conjugate Unfoldings:** Bounded, totalized conjugate unfoldings mapping dual multiset streams.
+- **QuadStream Transformation:** 4-stream interleaving and cross-scale projection.
 
-### 4. `Core.Goh` & `Math.Transform.Reflect.Goh`
-- **Wildberger Spread Polynumbers:** Goh auxiliary polynomial factorization ($\Phi_d(s)$) over rational spread polynomials.
-- **Factor Multiset Trees:** `GohMultiset` trees storing factorized spread polynomials, evaluating wave propagation and multi-turn particle evolutions via exact polynomial multiplication.
+### 4. Active Inference & Dynamical Transducers (`Stage1.ActiveInference`, `Stage1.Multiset.Dynamics`, `Stage1.Multiset.StreamTransducer`)
+- **Discrete Active Inference:** Free energy minimization and Markov blanket state transducers over multiset observations.
+- **Stream Transducers:** Mealy/Moore-style state machines consuming and emitting discrete multiset tokens.
 
-### 5. `Core.MultisetTree`
-- **Logarithmic State Data Structures:** Balanced binary multiset trees (`MultisetTree`) providing $O(\log N)$ parallelized lookup, insertion, and sum preservation over linear lists.
-- **Fast Binary Exponentiation:** Structural fuel-bounded $O(\log k)$ binary exponentiation (`fastNatPower2`).
-
-### 6. `Core.MaxelTransform`
-- **Pushforward & Pullback Operators:** Transform multisets (`TransformMultiset`), forward contraction ($f_*$), and reverse-causal pullback expansion ($f^*$).
-
-### 7. `Core.UniverseState`, `Core.LinearBuffer` & `Math.LawAlgebra`
-- **QTT Simulation State:** Linear simulation containers (`UniverseState`) enforcing linear state preservation (multiplicity 1).
-- **Physical Law Algebras:** Open stateful law interfaces (`StatefulLaw`), law action functions, and physical law combination monoids.
+### 5. Stratified Universe State (`Stage1.StratifiedState`, `Stage1.Smooth13UniverseState`)
+- **13-Smooth Physical State:** `Smooth13UniverseState` certifying at compile time that total cosmic capacity ($V_m + DE + DM$) is 13-smooth without prime factors $> 13$.
+- **Vacuum Seeding:** Strict zero-leakage state seeding (`seedSmoothCosmicVacuum`) conserving physical quanta across cosmic epochs.
 
 ---
 
 ## 🚀 Building & Installing
 
+Built with Idris 2 (`0.8.0`) via `pack`:
+
 ```bash
-idris2 --build FinSc-Multiset-Transform.ipkg
-idris2 --install FinSc-Multiset-Transform.ipkg
+pack build FinSc-Multiset-Transform.ipkg
+pack install FinSc-Multiset-Transform.ipkg
 ```
 
 ---
@@ -55,6 +49,6 @@ idris2 --install FinSc-Multiset-Transform.ipkg
 ## 🔬 Architectural Principles
 
 - **Total Constructivism:** Enforces `%default total` across all transformation modules.
-- **Zero Floating-Point Drift:** Exact rational (`UnixelFraction`) arithmetic eliminating numerical rounding defects.
+- **Zero Floating-Point Drift:** Exact integer box and rational arithmetic eliminating numerical rounding defects.
+- **2LTT Staging Discipline:** Clean separation between object-level dynamical computation and meta-level scale verification.
 - **Functorial Scale Categories:** Structure-preserving `ScaleFunctor` pipelines mapping micro-states to macro-envelopes.
-- **Elaborator Efficiency:** Monomorphic box matrix operations preventing typeclass method blocking during compile-time `%macro` reflection.

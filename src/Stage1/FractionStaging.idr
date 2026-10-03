@@ -2,6 +2,7 @@ module Stage1.FractionStaging
 
 import Stage0.BoxInt
 import Stage0.SignedFraction
+import Stage1.UnixelFraction
 import Stage1.TypeTheory.Staging
 import Stage1.TypeTheory.TwoLevel
 
@@ -67,3 +68,24 @@ public export
 0 prfStagedFractionEq : (f1 : MSetFraction) -> (f2 : MSetFraction) ->
                         stagedFractionEq (quote f1) (quote f2) = eqMSF f1 f2
 prfStagedFractionEq _ _ = Refl
+
+------------------------------------------------------------------------
+-- 2LTT STAGED FRACTION BRIDGE (U_0 MSetFraction <-> U_1 UnixelFraction)
+------------------------------------------------------------------------
+
+||| 2LTT Staged Elevation: Lifts an MSetFraction to a UnixelFraction at Stage 1.
+%inline public export
+stagedToUnixelFraction : Lift MSetFraction -> UnixelFraction
+stagedToUnixelFraction f = msetFractionToUnixelFraction (splice f)
+
+||| 2LTT Staged Demotion: Splices a Stage 1 UnixelFraction down to Stage 0 MSetFraction.
+%inline public export
+stagedToMSetFraction : Lift UnixelFraction -> MSetFraction
+stagedToMSetFraction f = unixelFractionToMSetFraction (splice f)
+
+||| QTT 0 Erased Proof Witness: Staged Round-trip preservation for positive denominators
+public export
+0 prfStagedFractionRoundTrip : (n : BoxInt) -> (k : Nat) ->
+                               stagedToMSetFraction (quote (stagedToUnixelFraction (quote (MkMSF n (S k))))) = MkMSF n (S k)
+prfStagedFractionRoundTrip _ _ = Refl
+
