@@ -83,7 +83,13 @@ public export
 0 verifyTripleQuadWitness : (q1 : BoxInt) -> (q2 : BoxInt) -> (q3 : BoxInt) -> Type
 verifyTripleQuadWitness q1 q2 q3 = (evalTripleQuadResidual q1 q2 q3 = evalTripleQuadResidual q1 q2 q3)
 
-||| Proof witness verifying Three-Fold Spread Theorem coherence across QuadStream metric sectors.
+||| Proof witness verifying Three-Fold Spread Theorem coherence across QuadStream metric sectors (7^2 + 24^2 = 25^2).
 public export
-0 verifyThreeFoldSpreadWitness : (n : BoxInt) -> n = n
-verifyThreeFoldSpreadWitness = prfRefl
+0 verifyThreeFoldSpreadWitness :
+  addBox (mulBox (hyperbolicQuadranceNL (intToBoxInt 4) (intToBoxInt 3))
+                 (hyperbolicQuadranceNL (intToBoxInt 4) (intToBoxInt 3)))
+         (mulBox (parabolicQuadranceNL (intToBoxInt 4) (intToBoxInt 24))
+                 (parabolicQuadranceNL (intToBoxInt 4) (intToBoxInt 24))) =
+  mulBox (ellipticQuadranceNL (intToBoxInt 4) (intToBoxInt 3))
+         (ellipticQuadranceNL (intToBoxInt 4) (intToBoxInt 3))
+verifyThreeFoldSpreadWitness = Refl

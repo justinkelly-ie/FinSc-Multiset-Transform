@@ -6,7 +6,7 @@ import Stage0.Multiset
 import Stage1.Goh
 import Stage1.UnixelFraction
 import Stage1.MaxelTransform
-import Stage1.ScaleCategory
+import Stage1.ScaleHierarchy
 import public Stage1.FourGeometries
 import public Stage1.QuadStream
 import Stage0.OnSeq.FusedStream
@@ -319,15 +319,19 @@ applyHierarchicalPipelineContraction : Box ColorCharge -> Box BiomoduleToken
 applyHierarchicalPipelineContraction sourceQuarks =
   applyPushforward tTotalFunctorialPipeline sourceQuarks
 
-||| QTT 0 erased proof witness verifying 9 source quark tokens contract through T_total directly to 9 HydratedCell tokens.
+||| QTT 0 erased proof witness verifying empty multiset pipeline contraction preservation.
 public export
-0 prfHierarchicalPipelineContraction : (n : BoxInt) -> n = n
-prfHierarchicalPipelineContraction = prfRefl
+0 prfHierarchicalPipelineContraction :
+  applyHierarchicalPipelineContraction (Stage0.Multiset.emptyBox {a=ColorCharge}) =
+  Stage0.Multiset.emptyBox {a=BiomoduleToken}
+prfHierarchicalPipelineContraction = Refl
 
-||| QTT 0 erased proof witness verifying deforested scale chain equivalence.
+||| QTT 0 erased proof witness verifying deforested scale chain equivalence on empty carrier.
 public export
-0 prfDeforestedPipelineEquivalence : (n : BoxInt) -> n = n
-prfDeforestedPipelineEquivalence = prfRefl
+0 prfDeforestedPipelineEquivalence :
+  applyDeforestedPipelineContraction (Stage0.Multiset.emptyBox {a=ColorCharge}) =
+  Stage0.Multiset.emptyBox {a=BiomoduleToken}
+prfDeforestedPipelineEquivalence = Refl
 
 ||| Measures Active Inference Helmholtz Free Energy Variational Surprise
 ||| F_surprise = S(f^* (f_* x)) - S(x) across a scale transform stage.

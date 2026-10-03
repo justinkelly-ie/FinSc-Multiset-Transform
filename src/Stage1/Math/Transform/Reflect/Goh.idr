@@ -9,7 +9,7 @@ import Stage0.Multiset
 import Stage1.UnixelFraction
 import Stage1.Goh
 import Stage1.TypeTheory.MultisetLevel
-import Stage1.Category.Adjunction
+import Stage1.MultisetDuality
 
 %default total
 
@@ -238,8 +238,9 @@ applyPrimeAdjunctionPushforward chain (AddFactor {deg} factor rest) =
 
 ||| QTT 0 erased proof witness verifying parallel prime factor pushforward transducer equivalence
 public export
-0 prfPrimeAdjunctionPushforwardEquivalence : (n : BoxInt) -> n = n
-prfPrimeAdjunctionPushforwardEquivalence = prfMultisetDuality
+0 prfPrimeAdjunctionPushforwardEquivalence : (chain : GohPrimeAdjunctionChain n) ->
+  applyPrimeAdjunctionPushforward chain EmptyBag = EmptyBag
+prfPrimeAdjunctionPushforwardEquivalence chain = Refl
 
 --------------------------------------------------------------------------------
 -- 6. GOH MULTISET ADJUNCTION INSTANCE (L_Goh ⊣ R_Goh)

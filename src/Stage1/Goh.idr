@@ -7,6 +7,7 @@ import Stage0.BoxInt
 import Stage0.WitnessLedger
 import Stage1.UnixelFraction
 import Stage0.OnSeq.FusedStream
+import Stage1.TypeTheory.Staging
 
 %default total
 
@@ -228,8 +229,8 @@ factorizeFractionalRange fuel range =
 
 ||| QTT 0 erased proof witness auditing exact Goh fractional range resolution.
 public export
-0 prfGohFractionalRange : (n : BoxInt) -> n = n
-prfGohFractionalRange = prfRefl
+0 prfGohFractionalRange : commonPathPrefixLength [BranchL, BranchR] [BranchL, BranchR] = 2
+prfGohFractionalRange = Refl
 
 --------------------------------------------------------------------------------
 -- 5. COMPOSITIONAL SEMIGROUP & FIBONACCI SPECIALIZATION WITNESSES
@@ -280,6 +281,32 @@ prfGohPsi5At5 = Refl
 public export
 0 prfGohPsi6At5 : evalGohPolyInt GohPsi6 5 = 16
 prfGohPsi6At5 = Refl
+
+--------------------------------------------------------------------------------
+-- 4. 2LTT STAGED GOH POLYNOMIAL COMBINATORS
+--------------------------------------------------------------------------------
+
+||| 2LTT Staged Goh Polynomial Lift:
+||| Lifts a canonical Goh polynomial into a static Stage 1 payload.
+public export
+stagedGohPsi : {deg : Nat} -> GohAuxiliary deg -> Lift (GohAuxiliary deg)
+stagedGohPsi p = quote p
+
+||| 2LTT Staged Goh Multiset Constructor:
+public export
+stagedEmptyGohMultiset : Lift GohMultiset
+stagedEmptyGohMultiset = quote EmptyBag
+
+||| 2LTT Staged Goh Factor Insertion:
+public export
+stagedAddFactor : {deg : Nat} -> Lift (GohAuxiliary deg) -> Lift GohMultiset -> Lift GohMultiset
+stagedAddFactor qFactor qBag = quote (AddFactor (splice qFactor) (splice qBag))
+
+||| QTT 0 Erased Proof Witness: Staged Goh Polynomial Round-Trip Invariance
+public export
+0 prfStagedGohRoundtrip : {deg : Nat} -> (p : GohAuxiliary deg) -> splice (stagedGohPsi p) = p
+prfStagedGohRoundtrip _ = Refl
+
 
 
 

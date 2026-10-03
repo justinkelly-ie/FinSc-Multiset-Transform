@@ -32,6 +32,27 @@ public export
                                 stagedStepUniverseLinear (quote state) (quote matter) = stepUniverseLinear state matter
 prfStagedStepUniverseLinear _ _ = Refl
 
+||| Linear 2LTT (LQTT) Staged State Transition:
+||| Consumes the LinearLift container and the underlying UniverseState with linear multiplicity 1,
+||| guaranteeing at compile time that state capacity cannot be cloned, dropped, or leaked.
+public export
+stagedStepUniverseLQTT : {vm, de, dm, k : Nat} ->
+                         (1 qState : LinearLift (UniverseState vm de dm)) ->
+                         Lift (Vect k BoxInt) ->
+                         UniverseState (vm + k) de (S dm)
+stagedStepUniverseLQTT qState qMatter =
+  stepUniverseLinear (spliceLinear qState) (splice qMatter)
+
+||| Linear 2LTT (LQTT) Direct Linear Staged Transition:
+public export
+stagedStepUniverseDirectLQTT : {vm, de, dm, k : Nat} ->
+                               (1 state : UniverseState vm de dm) ->
+                               Lift (Vect k BoxInt) ->
+                               UniverseState (vm + k) de (S dm)
+stagedStepUniverseDirectLQTT state qMatter =
+  stepUniverseLinear state (splice qMatter)
+
+
 ||| 2LTT Staged Two-Step Unfolded State Transition:
 ||| Statically sequences two consecutive matter injections at compile-time without intermediate heap allocations.
 %inline public export

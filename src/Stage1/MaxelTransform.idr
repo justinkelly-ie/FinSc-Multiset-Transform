@@ -5,7 +5,8 @@ import public Stage0.Multiset
 import public Stage1.UnixelFraction
 import public Stage1.VexelMaxel
 import public Stage1.MultisetTensor
-import Stage1.Category.Adjunction
+import public Stage1.FourGeometries
+import Stage1.MultisetDuality
 import Data.List
 import Data.Vect
 
@@ -52,6 +53,29 @@ public export
 (Show a, Show b) => Show (MaxelTransform a b) where
   show (MkMaxelTransform sec frac (MkBox tPairs)) =
     "MaxelTransform(" ++ show sec ++ ", " ++ show tPairs ++ ")"
+
+||| 2LTT Type-Indexed Maxel Transform carrying its FundamentalGeometry metric signature at Level 1.
+public export
+record TypedMaxelTransform (0 g : FundamentalGeometry) (a : Type) (b : Type) where
+  constructor MkTypedMaxelTransform
+  fraction : UnixelFraction
+  pixelBox : Box (a, b)
+
+public export
+(Show a, Show b) => Show (TypedMaxelTransform g a b) where
+  show (MkTypedMaxelTransform frac (MkBox tPairs)) =
+    "TypedMaxelTransform(" ++ show tPairs ++ ")"
+
+||| Converts an untyped MaxelTransform to a TypedMaxelTransform with the specified geometry index.
+public export
+toTypedMaxel : (0 g : FundamentalGeometry) -> MaxelTransform a b -> TypedMaxelTransform g a b
+toTypedMaxel g t = MkTypedMaxelTransform t.fraction t.pixelBox
+
+||| Converts a TypedMaxelTransform back into an untyped MaxelTransform given a MetricSector.
+public export
+fromTypedMaxel : MetricSector -> TypedMaxelTransform g a b -> MaxelTransform a b
+fromTypedMaxel sec t = MkMaxelTransform sec t.fraction t.pixelBox
+
 
 
 ------------------------------------------------------------------------
@@ -142,6 +166,19 @@ applyPullbackExpansion = applyPullback
 public export
 pullback : Eq a => Eq b => MaxelTransform a b -> Box b -> Box a
 pullback = applyPullback
+
+||| Pushforward for TypedMaxelTransform.
+public export
+typedPushforward : (Eq a, Eq b) => TypedMaxelTransform g a b -> Box a -> Box b
+typedPushforward (MkTypedMaxelTransform frac box) state =
+  applyPushforward (MkMaxelTransform EllipticSector frac box) state
+
+||| Pullback for TypedMaxelTransform.
+public export
+typedPullback : (Eq a, Eq b) => TypedMaxelTransform g a b -> Box b -> Box a
+typedPullback (MkTypedMaxelTransform frac box) macroState =
+  applyPullback (MkMaxelTransform EllipticSector frac box) macroState
+
 
 ||| Direct pushforward action of a MaxelTransform on a 1D Vexel vector without intermediate list conversion.
 public export
@@ -376,6 +413,13 @@ makeMaxelScaleAdjunction t = MkMaxelScaleAdjunction
   (applyPullback t)
   (\_ => Refl)
   (\_ => Refl)
+
+||| Extracts the exact MultisetTensor incidence matrix from a MaxelTransform.
+public export
+maxelToMultisetTensor : Eq a => Eq b => MaxelTransform a b -> MultisetTensor a b
+maxelToMultisetTensor (MkMaxelTransform _ _ (MkBox tPairs)) =
+  foldl (\acc, (pair, w) => insertItemBox pair w acc) ZeroM tPairs
+
 
 ||| Evaluates the Scale Monad M(x) = f^* (f_* x) unit transformation on a concrete state x.
 public export

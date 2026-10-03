@@ -33,6 +33,11 @@
 - **13-Smooth Physical State:** `Smooth13UniverseState` certifying at compile time that total cosmic capacity ($V_m + DE + DM$) is 13-smooth without prime factors $> 13$.
 - **Vacuum Seeding:** Strict zero-leakage state seeding (`seedSmoothCosmicVacuum`) conserving physical quanta across cosmic epochs.
 
+### 6. 2LTT Staged Specialization & Compile-Time Macro Auditing (`Stage1.Staged.Specializer`, `Stage1.Reflect.InvariantAuditor`)
+- **Binding-Time Partial Evaluation:** Pre-evaluates statically known `MaxelTransform` matrices at compile-time ($U_1$), compiling pushforwards into unrolled, deforested assignments at Level 0 ($U_0$).
+- **Staged Pipeline Composition:** Statically composes $(T_2 \circ T_1)$ and multi-scale chains ($T_4 \circ T_3 \circ T_2 \circ T_1$) into fused single-step transformers.
+- **Rule 01 Elaborator Reflection Macros:** Typecheck-time `%macro` audits verifying Primorial 210 budget conservation, scale pipeline weight conservation, and 13-smooth cosmic dimension bounds with zero runtime overhead.
+
 ---
 
 ## 🚀 Building & Installing

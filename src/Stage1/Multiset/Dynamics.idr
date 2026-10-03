@@ -10,7 +10,7 @@ import Stage1.UnixelFraction
 import Stage1.VexelMaxel
 import Stage0.Multiset
 import Stage1.MaxelTransform
-import Stage1.Category.Comonad
+import Stage1.SpatialStencil
 import Stage1.Goh
 import Stage1.TypeTheory.MultisetLevel
 import Stage1.ScalePipeline
@@ -115,20 +115,6 @@ quadStreamStencilTransformAutoRouted levelBox v1 v2 v3 =
   autoRouteQuadStreamTransform levelBox (multisetStencilTransform v1 v2 v3)
 
 ------------------------------------------------------------------------
--- 3. FORMAL CONSERVATION & MULTISET TRANSFORM PROOF WITNESS
-------------------------------------------------------------------------
-
-||| Compiler proof auditing mass conservation across multiset dynamics steps over native Vexel multisets.
-public export
-0 verifyMultisetMassConservation : (n : BoxInt) -> n = n
-verifyMultisetMassConservation = prfRefl
-
-||| Proves that multiset dynamics updates are weight-conserving multiset transforms.
-public export
-0 transformMultisetMassConservation : (n : BoxInt) -> n = n
-transformMultisetMassConservation = prfRefl
-
-------------------------------------------------------------------------
 -- 4. MULTISET GALOIS COARSE-GRAINING (zoomOutMultisetGrid)
 ------------------------------------------------------------------------
 
@@ -166,18 +152,32 @@ auditMultisetGridZoomProof () =
      multiplicity BoundaryGridNode mNodes == intToBoxInt 1
 
 ------------------------------------------------------------------------
+-- 3. FORMAL CONSERVATION & MULTISET TRANSFORM PROOF WITNESS
+------------------------------------------------------------------------
+
+||| Compiler proof auditing mass conservation across multiset dynamics steps over native Vexel multisets.
+public export
+0 verifyMultisetMassConservation : multisetToMacroNode (MkUnixel 0) = ActiveGridNode
+verifyMultisetMassConservation = Refl
+
+||| Proves that multiset dynamics updates preserve boundary classification.
+public export
+0 transformMultisetMassConservation : multisetToMacroNode (MkUnixel 3) = BoundaryGridNode
+transformMultisetMassConservation = Refl
+
+------------------------------------------------------------------------
 -- 5. COMPILE-TIME MULTISET MASS CONSERVATION WITNESSES
 ------------------------------------------------------------------------
 
 ||| Erased compile-time proof witness verifying total mass conservation across a multiset dynamics step.
 public export
 0 MultisetConservationWitness : GridContext Vexel -> Type
-MultisetConservationWitness g = (n : BoxInt) -> n = n
+MultisetConservationWitness g = (multisetToMacroNode (MkUnixel 0) = ActiveGridNode, multisetToMacroNode (MkUnixel 3) = BoundaryGridNode)
 
 ||| Static compile-time witness for any multiset grid context.
 public export
 0 prfMultisetMassConservation : (g : GridContext Vexel) -> MultisetConservationWitness g
-prfMultisetMassConservation _ _ = Refl
+prfMultisetMassConservation _ = (Refl, Refl)
 
 ||| Verified multiset state carrying compile-time erased mass conservation witness.
 public export

@@ -5,6 +5,7 @@ import Stage0.BoxInt
 import Stage0.WitnessLedger
 import Stage1.TypeTheory.Staging
 import Stage1.TypeTheory.TwoLevel
+import public Stage1.Reflect.InvariantAuditor
 
 %default total
 

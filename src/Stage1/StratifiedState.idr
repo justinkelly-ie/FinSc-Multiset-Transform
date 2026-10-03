@@ -97,5 +97,6 @@ mkSmooth13StratifiedUniverseState (MkSmooth13UniverseState st prf) =
 
 ||| QTT 0 erased proof witness verifying Primorial 210 Cosmic Multiset Budget Conservation (27 + 128 + 55 = 210).
 public export
-0 prfCosmicMultisetBudgetConservation : (n : BoxInt) -> n = n
-prfCosmicMultisetBudgetConservation = prfRefl
+0 prfCosmicMultisetBudgetConservation :
+  addBox (intToBoxInt 27) (addBox (intToBoxInt 128) (intToBoxInt 55)) = intToBoxInt 210
+prfCosmicMultisetBudgetConservation = Refl

@@ -8,7 +8,7 @@ import Stage0.BoxInt
 import Stage0.Multiset
 import Stage1.UnixelFraction
 import Stage1.Goh
-import Stage1.Category.Adjunction
+import Stage1.MultisetDuality
 import Stage0.OnSeq.FusedStream
 import Stage1.TypeTheory.MultisetLevel
 import Stage1.TypeTheory.Staging

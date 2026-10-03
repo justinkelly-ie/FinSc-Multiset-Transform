@@ -102,7 +102,12 @@ autoDiffAt p a =
       res = evalPolynumberDual p z
   in (dualReal res, dualEps res)
 
-||| QTT 0 erased proof witness auditing exact Dual Number Automatic Differentiation.
+||| Extracts term count of a Maxel multiset.
 public export
-0 prfAutoDiff : (n : BoxInt) -> n = n
-prfAutoDiff = prfRefl
+maxelTermsCount : Maxel -> Nat
+maxelTermsCount (MkMaxel ts) = List.length ts
+
+||| QTT 0 erased proof witness auditing exact Dual Number 3-term carrier structure (real, real-diagonal, eps-tangent).
+public export
+0 prfAutoDiff : maxelTermsCount (dualNumber (intToBoxInt 3) (intToBoxInt 4)) = the Nat 3
+prfAutoDiff = Refl
