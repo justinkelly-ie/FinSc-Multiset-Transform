@@ -61,6 +61,37 @@ fusedComputeQuadStreamTotalMass : Fuel
 fusedComputeQuadStreamTotalMass f stepFn seedState =
   fusedQuadStreamHylomorphism f stepFn (\qs, acc => quadStreamTotalMass qs + acc) (intToBoxInt 0) seedState
 
+||| Total Nat fuel-bounded deforested hylomorphism fold over a QuadStreamMultiset simulation run.
+public export
+fusedQuadStreamHylomorphismNat : (fuel : Nat)
+                              -> (QuadStreamMultiset BoxInt -> QuadStreamMultiset BoxInt)
+                              -> (QuadStreamMultiset BoxInt -> b -> b)
+                              -> b
+                              -> QuadStreamMultiset BoxInt
+                              -> b
+fusedQuadStreamHylomorphismNat Z _ _ initVal _ = initVal
+fusedQuadStreamHylomorphismNat (S f) stepFn algebra initVal seedState =
+  loop f (1, seedState) initVal
+  where
+    loop : Nat -> (Nat, QuadStreamMultiset BoxInt) -> b -> b
+    loop Z _ acc = acc
+    loop (S k) (curr, st) acc =
+      let st' = stepFn st
+      in loop k (S curr, st') (algebra st acc)
+
+||| Total Nat fuel-bounded accumulated integer mass across N QuadStream simulation steps.
+public export
+fusedComputeQuadStreamTotalMassNat : (fuel : Nat)
+                                  -> (QuadStreamMultiset BoxInt -> QuadStreamMultiset BoxInt)
+                                  -> QuadStreamMultiset BoxInt
+                                  -> BoxInt
+fusedComputeQuadStreamTotalMassNat fuel stepFn seedState =
+  fusedQuadStreamHylomorphismNat fuel
+    stepFn
+    (\qs, acc => quadStreamTotalMass qs + acc)
+    (intToBoxInt 0)
+    seedState
+
 --------------------------------------------------------------------------------
 -- 3. FINITE TRAJECTORY CLIP EXTRACTION
 --------------------------------------------------------------------------------

@@ -37,13 +37,13 @@ subsumesBox (x :: xs) m1 m2 =
   (unwrapBox (lookupBox x m1) <= unwrapBox (lookupBox x m2)) && subsumesBox xs m1 m2
 
 ||| A Law Algebra state carrying 13-smooth UniverseState capacity certification
-public export covering
+public export
 record Smooth13LawState (vm : Nat) (de : Nat) (dm : Nat) where
   constructor MkSmooth13LawState
   lawState    : Smooth13UniverseState vm de dm
   smoothProof : Smooth13Dimension (vm + de + dm)
 
-public export covering
+public export
 {vm, de, dm : Nat} -> Eq (Smooth13LawState vm de dm) where
   (MkSmooth13LawState s1 _) == (MkSmooth13LawState s2 _) = s1 == s2
 
@@ -143,6 +143,20 @@ fusedMultisetTransformStream f s steps =
     []
     (1, steps)
 
+||| Total Nat fuel-bounded deforested stream transducer scaling a multiset vector stream.
+public export
+fusedMultisetTransformStreamNat : (fuel : Nat) -> BoxInt -> List BoxInt -> List BoxInt
+fusedMultisetTransformStreamNat Z _ _ = []
+fusedMultisetTransformStreamNat (S f) s steps =
+  loop f (1, steps) []
+  where
+    loop : Nat -> (Int, List BoxInt) -> List BoxInt -> List BoxInt
+    loop Z _ acc = acc
+    loop (S k) (idx, []) acc = acc
+    loop (S k) (idx, v :: rest) acc =
+      let step = MkTransformStep idx (mulBox s v)
+      in loop k (idx + 1, rest) (outValue step :: acc)
+
 ||| O(1) allocation deforested stream transducer evaluating total sum of transformed values across a stream.
 public export covering
 fusedComputeTotalTransformedSum : Fuel -> BoxInt -> List BoxInt -> BoxInt
@@ -154,6 +168,20 @@ fusedComputeTotalTransformedSum f s steps =
     (\step, acc => addBox (outValue step) acc)
     (intToBoxInt 0)
     (1, steps)
+
+||| Total Nat fuel-bounded stream transducer evaluating total sum of transformed values.
+public export
+fusedComputeTotalTransformedSumNat : (fuel : Nat) -> BoxInt -> List BoxInt -> BoxInt
+fusedComputeTotalTransformedSumNat Z _ _ = intToBoxInt 0
+fusedComputeTotalTransformedSumNat (S f) s steps =
+  loop f (1, steps) (intToBoxInt 0)
+  where
+    loop : Nat -> (Int, List BoxInt) -> BoxInt -> BoxInt
+    loop Z _ acc = acc
+    loop (S k) (idx, []) acc = acc
+    loop (S k) (idx, v :: rest) acc =
+      let step = MkTransformStep idx (mulBox s v)
+      in loop k (idx + 1, rest) (addBox (outValue step) acc)
 
 ||| Structurally total deforested multiset stream transformation without Fuel.
 ||| Uses structural recursion directly over the input list of tokens.
@@ -179,6 +207,16 @@ boxComputeTotalTransformedSum f (MkBox items) =
 public export covering
 fusedStreamTotalSum : FusedStream BoxInt -> BoxInt
 fusedStreamTotalSum st = foldStream addBox (intToBoxInt 0) st
+
+||| Total stream evaluation: folds directly over a FusedStream using Nat fuel.
+public export
+fusedStreamTotalSumNat : (fuel : Nat) -> FusedStream BoxInt -> BoxInt
+fusedStreamTotalSumNat fuel st = foldStreamNat fuel addBox (intToBoxInt 0) st
+
+||| Total stream evaluation: folds directly over a FusedStream using Data.Fuel.
+public export
+fusedStreamTotalSumFuel : Fuel -> FusedStream BoxInt -> BoxInt
+fusedStreamTotalSumFuel fuel st = foldStreamFuel fuel addBox (intToBoxInt 0) st
 
 
 

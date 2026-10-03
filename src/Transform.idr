@@ -1,6 +1,8 @@
 module Transform
 
 import public Core.Stage0
+import public Stage0.ScalePipeline.StreamAdjunction
+import public Stage0.ScalePipeline.StreamDuality
 import public Stage1.ScalePipeline.StreamDuality
 import public Stage1.Smooth13UniverseState
 import public Stage1.PixelStaging

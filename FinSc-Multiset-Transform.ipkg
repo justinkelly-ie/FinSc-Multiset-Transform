@@ -7,6 +7,8 @@ depends = FinSc-Multiset-Core, base, linear
 sourcedir = "src"
 
 modules = Transform,
+          Stage0.ScalePipeline.StreamAdjunction,
+          Stage0.ScalePipeline.StreamDuality,
           Stage1.ScalePipeline.StreamAdjunction,
           Stage1.ScalePipeline.StreamDuality,
           Stage1.Smooth13UniverseState,
