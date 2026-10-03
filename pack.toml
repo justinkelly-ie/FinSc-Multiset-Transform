@@ -1,7 +1,7 @@
 [package]
-name = "FinSc-Multiset-Transform"
+name = "FinSc-Phase-Unfolding"
 version = "0.3.1"
-ipkg = "FinSc-Multiset-Transform.ipkg"
+ipkg = "FinSc-Phase-Unfolding.ipkg"
 
 [custom.all.FinSc-Multiset-Core]
 type = "local"
