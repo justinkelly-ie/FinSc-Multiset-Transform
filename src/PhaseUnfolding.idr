@@ -9,6 +9,7 @@ import public Stage1.MaxelStaging
 import public Stage1.UniverseStaging
 import public Stage1.Goh
 import public Stage1.MaxelTransform
+import public Stage1.MaxelPolyBridge
 import public Stage1.ScaleHierarchy
 import public Stage1.ScalePipeline
 import public Stage1.Multiset.Dynamics
