@@ -255,14 +255,24 @@ t123_QuarkToMolecule = mkMaxelTransform EllipticSector (mkUnixelFraction (intToB
   , ((BlueColor, WaterMoleculeToken), intToBoxInt 1)
   ]
 
-||| Composite End-to-End Scale Pipeline Transform T_total = T4 ∘ T3 ∘ T2 ∘ T1: Quarks -> Biomodules
+||| The Cosmological Spacetime Trunk Hadronization Stage: Quarks -> Hadrons
 public export
-tTotalFunctorialPipeline : MaxelTransform ColorCharge BiomoduleToken
-tTotalFunctorialPipeline = mkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxInt 1) 27)
+tCosmicHadronizationPipeline : MaxelTransform ColorCharge HadronToken
+tCosmicHadronizationPipeline = t1_QuarkToHadron
+
+||| Condensed & Living Matter Branch Pipeline: Quarks -> Biomodules (Observer Epoch k=38)
+public export
+tCondensedMatterPipeline : MaxelTransform ColorCharge BiomoduleToken
+tCondensedMatterPipeline = mkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxInt 1) 27)
   [ ((RedColor, HydratedCellToken), intToBoxInt 1)
   , ((GreenColor, HydratedCellToken), intToBoxInt 1)
   , ((BlueColor, HydratedCellToken), intToBoxInt 1)
   ]
+
+||| Composite End-to-End Condensed Matter Pipeline Transform T_total = T4 ∘ T3 ∘ T2 ∘ T1
+public export
+tTotalFunctorialPipeline : MaxelTransform ColorCharge BiomoduleToken
+tTotalFunctorialPipeline = tCondensedMatterPipeline
 
 ------------------------------------------------------------------------
 -- 7b. TYPE-SAFE SCALE FUNCTOR REPRESENTATIONS
