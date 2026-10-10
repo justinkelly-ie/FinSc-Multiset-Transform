@@ -132,15 +132,11 @@ spreadRecurrenceHylo fuel s =
     iterateFuel Dry _ acc = acc
     iterateFuel (More f) step acc = iterateFuel f step (step acc)
 
-||| Normalizes a Maxel by consolidating duplicate pixels and removing zero weights.
+||| Normalizes a Maxel by consolidating duplicate pixels and removing zero weights
+||| via canonical single-pass multiset insertion without quadratic list scans.
 public export
 compressMaxel : VM.Maxel -> VM.Maxel
-compressMaxel m =
-  let supp = VM.supportMaxel m
-      uniquePixels = nub supp
-      terms = map (\px => (px, VM.lookupPixel px m)) uniquePixels
-      nonZero = filter (\(_, w) => unwrapBox w /= 0) terms
-  in VM.MkMaxel nonZero
+compressMaxel = VM.canonicalizeMaxel
 
 ||| Constructs canonical identity Maxel for small dimensions.
 public export
