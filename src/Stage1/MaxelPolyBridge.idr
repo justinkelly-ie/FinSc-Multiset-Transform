@@ -222,6 +222,41 @@ auditSpreadOrthogonalOscillationProof =
      boxEq s3 (intToBoxInt 1) &&
      boxEq s4 (intToBoxInt 0)
 
+||| Fast logarithmic binary exponentiation for Maxel operators with Nat fuel (Rule 04).
+||| Computes M^exp in O(log exp) steps via repeated squaring of consolidated Maxels using constructive halving.
+public export
+fastMaxelPowerNat : (fuel : Nat) -> (exp : Nat) -> (dim : Nat) -> (m : VM.Maxel) -> VM.Maxel
+fastMaxelPowerNat Z _ dim _ = identityMaxelDim dim
+fastMaxelPowerNat (S _) Z dim _ = identityMaxelDim dim
+fastMaxelPowerNat (S _) (S Z) _ m = compressMaxel m
+fastMaxelPowerNat (S f) exp dim m =
+  loop f exp (compressMaxel m) (identityMaxelDim dim)
+  where
+    loop : Nat -> Nat -> VM.Maxel -> VM.Maxel -> VM.Maxel
+    loop Z _ _ acc = acc
+    loop (S _) Z _ acc = acc
+    loop (S f') e base acc =
+      let isOdd = (cast {to = Integer} e `mod` 2) == 1
+          acc' = if isOdd then compressMaxel (VM.mulMaxel acc base) else acc
+          base' = compressMaxel (VM.mulMaxel base base)
+          e' = half e
+      in loop f' e' base' acc'
+
+||| Evaluates the n-th Wildberger multiple spread S_n in O(log n) steps with Nat fuel:
+public export
+fastSpreadPowerNat : (fuel : Nat) -> (n : Nat) -> (s : BoxInt) -> BoxInt
+fastSpreadPowerNat _ Z _ = intToBoxInt 0
+fastSpreadPowerNat _ 1 s = s
+fastSpreadPowerNat fuel (S k) s =
+  let m = spreadTransferMaxel s
+      mPow = fastMaxelPowerNat fuel k 3 m
+      vInit = VM.MkVexel [ (VM.MkUnixel 1, s)
+                         , (VM.MkUnixel 2, intToBoxInt 0)
+                         , (VM.MkUnixel 3, intToBoxInt 1)
+                         ]
+      vFinal = VM.actMaxelVexel mPow vInit
+  in VM.lookupUnixel (VM.MkUnixel 1) vFinal
+
 ||| Verifies fast O(log N) repeated squaring produces identical results to linear hylomorphism:
 ||| Tests S_1, S_2, S_3, S_4 for both s = 1 (orthogonal) and s = 2 (hyperbolic).
 public export
@@ -240,6 +275,27 @@ auditFastSpreadEquivalenceProof =
       h4 = spreadRecurrenceHylo (limit 3) sOrth
       hf1 = fastSpreadPower fuel 1 sHyp
       hf2 = fastSpreadPower fuel 2 sHyp
+      hh1 = spreadRecurrenceHylo (limit 0) sHyp
+      hh2 = spreadRecurrenceHylo (limit 1) sHyp
+  in (f1 == h1) && (f2 == h2) && (f3 == h3) && (f4 == h4) &&
+     (hf1 == hh1) && (hf2 == hh2)
+
+||| Verifies fast O(log N) repeated squaring with Nat fuel produces identical results to linear hylomorphism.
+public export
+auditFastSpreadPowerNatEquivalenceProof : Bool
+auditFastSpreadPowerNatEquivalenceProof =
+  let sOrth = intToBoxInt 1
+      sHyp = intToBoxInt 2
+      f1 = fastSpreadPowerNat 10 1 sOrth
+      f2 = fastSpreadPowerNat 10 2 sOrth
+      f3 = fastSpreadPowerNat 10 3 sOrth
+      f4 = fastSpreadPowerNat 10 4 sOrth
+      h1 = spreadRecurrenceHylo (limit 0) sOrth
+      h2 = spreadRecurrenceHylo (limit 1) sOrth
+      h3 = spreadRecurrenceHylo (limit 2) sOrth
+      h4 = spreadRecurrenceHylo (limit 3) sOrth
+      hf1 = fastSpreadPowerNat 10 1 sHyp
+      hf2 = fastSpreadPowerNat 10 2 sHyp
       hh1 = spreadRecurrenceHylo (limit 0) sHyp
       hh2 = spreadRecurrenceHylo (limit 1) sHyp
   in (f1 == h1) && (f2 == h2) && (f3 == h3) && (f4 == h4) &&
