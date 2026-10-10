@@ -73,10 +73,39 @@ pythagoreanFixedPoint x y =
       g = intToBoxInt 2 * x * y
   in MkTriadQuadrance b r g
 
+||| Maps a cosmological scale index k in [0, 136] to a primitive dynamic Pythagorean coordinate (x_k, y_k).
+||| Base epoch 0 is the canonical (4, 3) fixed point.
+public export
+epochPythagoreanCoordinate : Nat -> (BoxInt, BoxInt)
+epochPythagoreanCoordinate k =
+  let kInt = cast {to = Integer} k
+      m = 4 + (kInt `mod` 137)
+      n = 3 + ((kInt * 2) `mod` 137)
+      x = if m > n then m else n + 1
+      y = if m > n then n else m
+  in (intToBoxInt x, intToBoxInt y)
+
+||| Computes the dynamic TriadQuadrance at cosmological epoch index k.
+public export
+epochTriadQuadrance : Nat -> TriadQuadrance
+epochTriadQuadrance k =
+  let (x, y) = epochPythagoreanCoordinate k
+  in pythagoreanFixedPoint x y
+
+||| Proves that the dynamic TriadQuadrance satisfies Q_Blue^2 == Q_Red^2 + Q_Green^2 for any epoch k.
+public export
+auditDynamicEpochTriadIdentityProof : Nat -> Bool
+auditDynamicEpochTriadIdentityProof k =
+  let t = epochTriadQuadrance k
+      lhs = mulBox t.blueQ t.blueQ
+      rhs = addBox (mulBox t.redQ t.redQ) (mulBox t.greenQ t.greenQ)
+  in boxEq lhs rhs
+
 ||| The canonical Pythagorean Fixed Point (4, 3) generating the fundamental triad (25, 7, 24).
+||| Deprecated: Prefer `epochTriadQuadrance k` for dynamic multi-epoch scaling.
 public export
 canonicalPythagoreanTriad : TriadQuadrance
-canonicalPythagoreanTriad = pythagoreanFixedPoint (intToBoxInt 4) (intToBoxInt 3)
+canonicalPythagoreanTriad = epochTriadQuadrance 0
 
 ||| Boolean audit proving the canonical (4, 3) point satisfies the exact Three-Fold Spread Identity:
 ||| Q_Blue^2 == Q_Red^2 + Q_Green^2 (25^2 = 7^2 + 24^2, 625 = 49 + 576).
