@@ -8,6 +8,7 @@ module Stage1.Multiset.QuadStreamPipeline
 import Stage0.BoxInt
 import Stage0.WitnessLedger
 import Stage0.Multiset
+import Stage0.StructuralFuel
 import Stage1.QuadStream
 import Stage0.OnSeq.FusedStream
 import Stage1.OnSeq
@@ -38,32 +39,6 @@ fusedQuadStreamPipeline f stepFn seedState = MkStream nextStep (1, seedState)
 -- 2. FUSED HYLOMORPHISM & CATAMORPHIC AGGREGATION
 --------------------------------------------------------------------------------
 
-||| Evaluates deforested hylomorphism fold over a QuadStreamMultiset simulation run.
-public export covering
-fusedQuadStreamHylomorphism : Fuel
-                            -> (QuadStreamMultiset BoxInt -> QuadStreamMultiset BoxInt)
-                            -> (QuadStreamMultiset BoxInt -> b -> b)
-                            -> b
-                            -> QuadStreamMultiset BoxInt
-                            -> b
-fusedQuadStreamHylomorphism f stepFn algebra initVal seedState =
-  fusedHylomorphism f
-    (\(curr, st) =>
-       let st' = stepFn st
-       in Yield st (S curr, st'))
-    algebra
-    initVal
-    (1, seedState)
-
-||| Computes total accumulated integer mass across N QuadStream simulation steps using fused hylomorphism.
-public export covering
-fusedComputeQuadStreamTotalMass : Fuel
-                                -> (QuadStreamMultiset BoxInt -> QuadStreamMultiset BoxInt)
-                                -> QuadStreamMultiset BoxInt
-                                -> BoxInt
-fusedComputeQuadStreamTotalMass f stepFn seedState =
-  fusedQuadStreamHylomorphism f stepFn (\qs, acc => quadStreamTotalMass qs + acc) (intToBoxInt 0) seedState
-
 ||| Total Nat fuel-bounded deforested hylomorphism fold over a QuadStreamMultiset simulation run.
 public export
 fusedQuadStreamHylomorphismNat : (fuel : Nat)
@@ -82,6 +57,29 @@ fusedQuadStreamHylomorphismNat (S f) stepFn algebra initVal seedState =
       let st' = stepFn st
       in loop k (S curr, st') (algebra st acc)
 
+||| Evaluates deforested hylomorphism fold over a QuadStreamMultiset simulation run using BoxNat fuel.
+public export
+fusedQuadStreamHylomorphismBoxNat : BoxNat
+                                  -> (QuadStreamMultiset BoxInt -> QuadStreamMultiset BoxInt)
+                                  -> (QuadStreamMultiset BoxInt -> b -> b)
+                                  -> b
+                                  -> QuadStreamMultiset BoxInt
+                                  -> b
+fusedQuadStreamHylomorphismBoxNat bfuel stepFn algebra initVal seedState =
+  fusedQuadStreamHylomorphismNat (boxNatToNat bfuel) stepFn algebra initVal seedState
+
+||| Evaluates deforested hylomorphism fold over a QuadStreamMultiset simulation run.
+public export
+fusedQuadStreamHylomorphism : Fuel
+                            -> (QuadStreamMultiset BoxInt -> QuadStreamMultiset BoxInt)
+                            -> (QuadStreamMultiset BoxInt -> b -> b)
+                            -> b
+                            -> QuadStreamMultiset BoxInt
+                            -> b
+fusedQuadStreamHylomorphism (More f) stepFn algebra initVal seedState =
+  fusedQuadStreamHylomorphismBoxNat masterSubstrateGohFuel stepFn algebra initVal seedState
+fusedQuadStreamHylomorphism Dry _ _ initVal _ = initVal
+
 ||| Total Nat fuel-bounded accumulated integer mass across N QuadStream simulation steps.
 public export
 fusedComputeQuadStreamTotalMassNat : (fuel : Nat)
@@ -94,6 +92,25 @@ fusedComputeQuadStreamTotalMassNat fuel stepFn seedState =
     (\qs, acc => quadStreamTotalMass qs + acc)
     (intToBoxInt 0)
     seedState
+
+||| Computes total accumulated integer mass across N QuadStream simulation steps using BoxNat fuel.
+public export
+fusedComputeQuadStreamTotalMassBoxNat : BoxNat
+                                      -> (QuadStreamMultiset BoxInt -> QuadStreamMultiset BoxInt)
+                                      -> QuadStreamMultiset BoxInt
+                                      -> BoxInt
+fusedComputeQuadStreamTotalMassBoxNat bfuel stepFn seedState =
+  fusedComputeQuadStreamTotalMassNat (boxNatToNat bfuel) stepFn seedState
+
+||| Computes total accumulated integer mass across N QuadStream simulation steps using fused hylomorphism.
+public export
+fusedComputeQuadStreamTotalMass : Fuel
+                                -> (QuadStreamMultiset BoxInt -> QuadStreamMultiset BoxInt)
+                                -> QuadStreamMultiset BoxInt
+                                -> BoxInt
+fusedComputeQuadStreamTotalMass (More f) stepFn seedState =
+  fusedComputeQuadStreamTotalMassBoxNat masterSubstrateGohFuel stepFn seedState
+fusedComputeQuadStreamTotalMass Dry _ _ = intToBoxInt 0
 
 --------------------------------------------------------------------------------
 -- 3. FINITE TRAJECTORY CLIP EXTRACTION

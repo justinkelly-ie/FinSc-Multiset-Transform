@@ -229,6 +229,12 @@ prop_primeAdjunctionTensorDecomposeInvariance n =
 public export
 applyPrimeAdjunctionPushforward : GohPrimeAdjunctionChain n -> GohMultiset -> GohMultiset
 applyPrimeAdjunctionPushforward chain EmptyBag = EmptyBag
+applyPrimeAdjunctionPushforward chain (AddFactorM {deg} factor m rest) =
+  let pairs = primeAdjunctionTensorDecompose chain
+      restPushed = applyPrimeAdjunctionPushforward chain rest
+  in if any (\(p, _) => deg `mod` p == 0) pairs
+        then AddFactorM factor m restPushed
+        else restPushed
 applyPrimeAdjunctionPushforward chain (AddFactor {deg} factor rest) =
   let pairs = primeAdjunctionTensorDecompose chain
       restPushed = applyPrimeAdjunctionPushforward chain rest

@@ -82,7 +82,7 @@ quadStreamTransducer =
     in Yield stepped stepped) (MkQuadStream ZeroM ZeroM ZeroM ZeroM)
 
 ||| Deforested stream evaluation of Quad-Stream mass budget conservation over N iterations.
-public export covering
+public export
 fusedQuadStreamTotalMass : Fuel -> QuadStreamMultiset BoxInt -> BoxInt
 fusedQuadStreamTotalMass f (MkQuadStream e h p s) =
   addBox (addBox (multisetSum e) (multisetSum h))

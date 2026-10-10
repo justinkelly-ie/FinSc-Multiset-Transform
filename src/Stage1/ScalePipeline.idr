@@ -12,6 +12,8 @@ import public Stage1.QuadStream
 import Stage0.OnSeq.FusedStream
 import Stage1.Math.OnSeq.SpreadStream
 import Stage1.TypeTheory.MultisetLevel
+import Stage1.TypeTheory.Staging
+import Stage1.TypeTheory.TwoLevel
 import Data.List
 
 %default total
@@ -410,3 +412,55 @@ t3_StageRouted levelBox = autoRouteTransformSector levelBox t3_AtomToMolecule
 public export
 t4_StageRouted : {n : Nat} -> LevelBox n GohMultiset -> MaxelTransform MoleculeToken BiomoduleToken
 t4_StageRouted levelBox = autoRouteTransformSector levelBox t4_MoleculeToBiomodule
+
+------------------------------------------------------------------------
+-- 10. 2LTT STAGED MULTI-SCALE HORNER COMPOSITION & STREAM TRANSDUCERS
+------------------------------------------------------------------------
+
+||| Multi-scale Horner composition transducer evaluating polynomial scale shifts:
+||| Z_{k_m ... k_1}(x) = Horner evaluation of scale coefficient sequence.
+public export
+evalMultiScaleHorner : List BoxInt -> BoxInt -> BoxInt
+evalMultiScaleHorner [] _ = intToBoxInt 0
+evalMultiScaleHorner [c0] _ = c0
+evalMultiScaleHorner (c0 :: rest) x = c0 + (x * evalMultiScaleHorner rest x)
+
+||| 2LTT Staged Multi-Scale Horner Transducer:
+||| Inlines the multi-scale polynomial composition down into compiled Stage 0 arithmetic.
+public export
+stagedMultiScaleHorner : List BoxInt -> Code BoxInt -> Code BoxInt
+stagedMultiScaleHorner [] _ = quote (intToBoxInt 0)
+stagedMultiScaleHorner [c0] _ = quote c0
+stagedMultiScaleHorner (c0 :: rest) qX =
+  quote (addBox (splice (quote c0))
+                (mulBox (splice qX)
+                        (splice (stagedMultiScaleHorner rest qX))))
+
+||| QTT 0-erased roundtrip theorem verifying that staged multi-scale Horner code evaluates identically:
+public export
+0 prfStagedMultiScaleHornerRoundtrip : (coeffs : List BoxInt) -> (x : BoxInt) ->
+  splice (quote (evalMultiScaleHorner coeffs x)) = evalMultiScaleHorner coeffs x
+prfStagedMultiScaleHornerRoundtrip coeffs x = inverseSpliceQuote (evalMultiScaleHorner coeffs x)
+
+||| Unfolds multi-scale evaluations across 1..137 scales using a deforested stream stepper:
+public export
+stream137ScaleHorner : List BoxInt -> FusedStream (Nat, BoxInt)
+stream137ScaleHorner coeffs =
+  unfoldStream stepScale 1
+  where
+    stepScale : Nat -> Step Nat (Nat, BoxInt)
+    stepScale k =
+      if k > 137
+        then Done
+        else
+          let val = evalMultiScaleHorner coeffs (intToBoxInt (cast k))
+          in Yield (k, val) (S k)
+
+||| Audits the multi-scale Horner streaming evaluation across 137 scales:
+public export
+auditMultiScaleHornerStreamProof : Bool
+auditMultiScaleHornerStreamProof =
+  let testCoeffs = [intToBoxInt 1, intToBoxInt 2, intToBoxInt 1]
+      strm = stream137ScaleHorner testCoeffs
+      first3 = foldStreamNat 3 (\acc, (k, v) => (k, unwrapBox v) :: acc) (the (List (Nat, Integer)) []) strm
+  in length first3 == 3

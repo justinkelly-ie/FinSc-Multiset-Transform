@@ -2,6 +2,7 @@ module Stage1.Math.OnSeq.ConjugateDuality
 
 import public Stage0.OnSeq.FusedStream
 import public Stage0.Multiset
+import public Stage0.StructuralFuel
 import public Stage1.TypeTheory.TwoLevel
 import public Stage1.MultisetDuality
 import Data.Fuel
@@ -44,10 +45,20 @@ fusedConjugateHyloNat (S f) coalg alg bridge acc seed = loop f seed acc
             newAcc = alg (Yield x' currentAcc)
         in loop f' st' newAcc
 
+||| Executes a 2LTT Conjugate Hylomorphism using BoxNat fuel.
+public export
+fusedConjugateHyloBoxNat : {0 c, s, a : Type} ->
+                         BoxNat ->
+                         (coalgebra : c -> Step c a) ->
+                         (algebra : Step s a -> s) ->
+                         (bridge : a -> a) ->
+                         s -> c -> s
+fusedConjugateHyloBoxNat bfuel coalg alg bridge acc seed =
+  fusedConjugateHyloNat (boxNatToNat bfuel) coalg alg bridge acc seed
+
 ||| Executes a 2LTT Conjugate Hylomorphism (Mamamorphism) bridging strict outer streams
 ||| (StrictLevel L) to inner homotopy physical states (HomotopyLevel R) via strict reflection.
-||| For total constructivism without covering annotations, use fusedConjugateHyloNat.
-public export covering
+public export
 fusedConjugateHylo : {0 c, s, a : Type} ->
                      Fuel ->
                      (coalgebra : c -> Step c a) ->
@@ -55,18 +66,8 @@ fusedConjugateHylo : {0 c, s, a : Type} ->
                      (bridge : a -> a) ->
                      s -> c -> s
 fusedConjugateHylo Dry _ _ _ acc _ = acc
-fusedConjugateHylo (More f') coalg alg bridge acc seed = loop f' seed acc
-  where
-    covering
-    loop : Fuel -> c -> s -> s
-    loop Dry _ currentAcc = currentAcc
-    loop (More f'') st currentAcc = case coalg st of
-      Done => currentAcc
-      Skip st' => loop f'' st' currentAcc
-      Yield x st' =>
-        let x' = bridge x
-            newAcc = alg (Yield x' currentAcc)
-        in loop f'' st' newAcc
+fusedConjugateHylo (More f') coalg alg bridge acc seed =
+  fusedConjugateHyloBoxNat masterSubstrateGohFuel coalg alg bridge acc seed
 
 ||| 2LTT Subfibration Transducer: Maps strict outer stream folds to inner homotopy physical manifolds.
 ||| Incorporates QTT 0 erased proof witnesses for zero-runtime-cost subfibration transformations.

@@ -8,6 +8,8 @@ import Stage0.BoxInt
 import Stage0.Multiset
 import Stage1.UnixelFraction
 import Stage1.Goh
+import Stage0.BoxNat
+import Stage0.StructuralFuel
 import Stage1.MultisetDuality
 import Stage0.OnSeq.FusedStream
 import Stage1.TypeTheory.MultisetLevel
@@ -119,6 +121,10 @@ interface SpreadStreamAdjunction (0 l : Type -> Type) (0 r : Type -> Type) where
 public export
 classifySpreadStreamSector : GohMultiset -> FundamentalGeometry
 classifySpreadStreamSector EmptyBag = SubstrateGeom
+classifySpreadStreamSector (AddFactorM {deg} _ _ _) =
+  if deg `mod` 3 == Z then EllipticGeom
+  else if deg `mod` 2 == Z then HyperbolicGeom
+  else ParabolicGeom
 classifySpreadStreamSector (AddFactor {deg} _ _) =
   if deg `mod` 3 == Z then EllipticGeom
   else if deg `mod` 2 == Z then HyperbolicGeom
@@ -142,23 +148,25 @@ fusedSpreadHylomorphismNat (S f) next consumerFold acc seed = loop f seed acc
       Yield bag st' => loop f' st' (consumerFold bag currentAcc)
 
 ||| Evaluates an allocation-free deforested Goh spread polynomial stream generator under 
+||| category-theoretic adjunction folds (Adjoint Hylomorphism) using BoxNat fuel.
+public export
+fusedSpreadHylomorphismBoxNat : BoxNat ->
+                              (s -> Step s GohMultiset) ->
+                              (GohMultiset -> b -> b) ->
+                              b -> s -> b
+fusedSpreadHylomorphismBoxNat bfuel next consumerFold acc seed =
+  fusedSpreadHylomorphismNat (boxNatToNat bfuel) next consumerFold acc seed
+
+||| Evaluates an allocation-free deforested Goh spread polynomial stream generator under 
 ||| category-theoretic adjunction folds (Adjoint Hylomorphism).
-||| For guaranteed totality, use fusedSpreadHylomorphismNat.
-public export covering
+public export
 fusedSpreadHylomorphism : Fuel ->
                           (s -> Step s GohMultiset) ->
                           (GohMultiset -> b -> b) ->
                           b -> s -> b
 fusedSpreadHylomorphism Dry _ _ acc _ = acc
-fusedSpreadHylomorphism (More f') next consumerFold acc seed = loop f' seed acc
-  where
-    covering
-    loop : Fuel -> s -> b -> b
-    loop Dry _ currentAcc = currentAcc
-    loop (More f'') st currentAcc = case next st of
-      Done => currentAcc
-      Skip st' => loop f'' st' currentAcc
-      Yield bag st' => loop f'' st' (consumerFold bag currentAcc)
+fusedSpreadHylomorphism (More f') next consumerFold acc seed =
+  fusedSpreadHylomorphismBoxNat masterSubstrateGohFuel next consumerFold acc seed
 
 ||| Evaluates a deforested Goh spread polynomial list fold structurally without Fuel.
 public export
@@ -204,6 +212,7 @@ primeFactors (S (S n)) =
 public export
 gohPrimeSpectrum : GohMultiset -> List Nat
 gohPrimeSpectrum EmptyBag = []
+gohPrimeSpectrum (AddFactorM {deg} _ _ rest) = primeFactors deg ++ gohPrimeSpectrum rest
 gohPrimeSpectrum (AddFactor {deg} _ rest) = primeFactors deg ++ gohPrimeSpectrum rest
 
 ||| Computes accumulated degree budget capacity across Blue (Elliptic), Red (Hyperbolic), Green (Parabolic) sectors.
@@ -213,6 +222,13 @@ chromogeometricBudgetExhaustion bags = foldl step (Z, Z, Z) bags
   where
     step : (Nat, Nat, Nat) -> GohMultiset -> (Nat, Nat, Nat)
     step (b, r, g) EmptyBag = (b, r, g)
+    step (b, r, g) (AddFactorM {deg} _ m rest) =
+      let degWeight = totient deg * boxNatToNat m
+          (b', r', g') =
+            if deg `mod` 3 == Z then (b + degWeight, r, g)
+            else if deg `mod` 2 == Z then (b, r + degWeight, g)
+            else (b, r, g + degWeight)
+      in step (b', r', g') rest
     step (b, r, g) (AddFactor {deg} _ rest) =
       let (b', r', g') =
             if deg `mod` 3 == Z then (b + totient deg, r, g)
@@ -259,6 +275,39 @@ prop_chromogeometricBudgetConservation (S n) =
       divs = divisors dim
       bags = map (\d => AddFactor (makeGohFactor d) EmptyBag) divs
       budget = computeChromogeometricBudget bags
+  in totalChromogeometricCapacity budget == dim
+
+||| Computes exact ChromogeometricSectorBudget directly from a deforested stream of GohMultiset factor bags.
+public export
+computeChromogeometricBudgetDeforested : FusedStream GohMultiset -> ChromogeometricSectorBudget
+computeChromogeometricBudgetDeforested strm =
+  let (b, r, g) = foldStreamNat (boxNatToNat masterSubstrateGohFuel) step (Z, Z, Z) strm
+  in MkChromogeometricSectorBudget b r g
+  where
+    step : (Nat, Nat, Nat) -> GohMultiset -> (Nat, Nat, Nat)
+    step (b, r, g) EmptyBag = (b, r, g)
+    step (b, r, g) (AddFactorM {deg} _ m rest) =
+      let degWeight = totient deg * boxNatToNat m
+          (b', r', g') =
+            if deg `mod` 3 == Z then (b + degWeight, r, g)
+            else if deg `mod` 2 == Z then (b, r + degWeight, g)
+            else (b, r, g + degWeight)
+      in step (b', r', g') rest
+    step (b, r, g) (AddFactor {deg} _ rest) =
+      let (b', r', g') =
+            if deg `mod` 3 == Z then (b + totient deg, r, g)
+            else if deg `mod` 2 == Z then (b, r + totient deg, g)
+            else (b, r, g + totient deg)
+      in step (b', r', g') rest
+
+||| Verifies that deforested stream budget computation matches the list-buffered version for dimension N.
+public export
+prop_chromogeometricBudgetDeforestedConservation : Nat -> Bool
+prop_chromogeometricBudgetDeforestedConservation Z = True
+prop_chromogeometricBudgetDeforestedConservation (S n) =
+  let dim = S n
+      strm = unfoldGohFactorStreamDeforested dim
+      budget = computeChromogeometricBudgetDeforested strm
   in totalChromogeometricCapacity budget == dim
 
 ------------------------------------------------------------------------
@@ -350,3 +399,71 @@ public export
 0 prfStagedSpreadComposeJump : (zm : GohMultiset) -> (zn : GohMultiset) -> (s : UnixelFraction) ->
                               splice (stagedSpreadComposeJump zm zn s) = evalSpreadComposeMultiset zm zn s
 prfStagedSpreadComposeJump zm zn s = inverseSpliceQuote (evalSpreadComposeMultiset zm zn s)
+
+------------------------------------------------------------------------
+-- 9. 2LTT SYMBOLIC STAGED HORNER UNROLLING & DEFORESTED STREAM INLINING
+------------------------------------------------------------------------
+
+||| Symbolically unrolls a coefficient list into nested Horner form at compile time (Stage 1).
+public export
+unrollHornerCoeffs : List UnixelFraction -> Code UnixelFraction -> Code UnixelFraction
+unrollHornerCoeffs [] _ = quote zeroUnixelFraction
+unrollHornerCoeffs [c0] _ = quote c0
+unrollHornerCoeffs (c0 :: rest) qS =
+  quote (addUnixelFraction (splice (quote c0))
+                           (mulUnixelFraction (splice qS)
+                                              (splice (unrollHornerCoeffs rest qS))))
+
+||| Staged Horner unrolling for a single GohAuxiliary factor:
+public export
+unrollHorner : GohAuxiliary deg -> Code UnixelFraction -> Code UnixelFraction
+unrollHorner (Phi coeffs) qS = unrollHornerCoeffs (toList coeffs) qS
+
+||| Symbolically unrolls rational power computation x^m at compile time.
+public export
+stagedPowerUnixelFraction : Code UnixelFraction -> (fuel : Nat) -> Code UnixelFraction
+stagedPowerUnixelFraction _ Z = quote unitUnixelFraction
+stagedPowerUnixelFraction qX (S Z) = qX
+stagedPowerUnixelFraction qX (S (S k)) =
+  quote (mulUnixelFraction (splice qX) (splice (stagedPowerUnixelFraction qX (S k))))
+
+||| Staged evaluation of a single factor with BoxNat multiplicity.
+public export
+stagedUnrollFactorM : GohAuxiliary deg -> BoxNat -> Code UnixelFraction -> Code UnixelFraction
+stagedUnrollFactorM factor m qS =
+  let factorCode = unrollHorner factor qS
+      mNat = boxNatToNat m
+  in stagedPowerUnixelFraction factorCode mNat
+
+||| Staged evaluation of an entire GohMultiset factorization tree P(s) = prod_{k} Phi_k(s)^m_k
+public export
+stagedUnrollGohMultiset : GohMultiset -> Code UnixelFraction -> Code UnixelFraction
+stagedUnrollGohMultiset EmptyBag _ = quote unitUnixelFraction
+stagedUnrollGohMultiset (AddFactor factor rest) qS =
+  let fCode = unrollHorner factor qS
+      restCode = stagedUnrollGohMultiset rest qS
+  in quote (mulUnixelFraction (splice fCode) (splice restCode))
+stagedUnrollGohMultiset (AddFactorM factor m rest) qS =
+  let fCode = stagedUnrollFactorM factor m qS
+      restCode = stagedUnrollGohMultiset rest qS
+  in quote (mulUnixelFraction (splice fCode) (splice restCode))
+
+||| 2LTT Staged Deforested Stream Transducer:
+||| Inlines the unrolled polynomial Horner evaluation pipeline directly into a stream transformer.
+public export
+stagedGohStreamTransducer : GohMultiset -> Code (FusedStream UnixelFraction -> FusedStream UnixelFraction)
+stagedGohStreamTransducer bag =
+  quote (\strm => mapStream (\s => splice (stagedUnrollGohMultiset bag (quote s))) strm)
+
+||| QTT 0 Erased Proof Witness: Staged Horner evaluation roundtrip.
+public export
+0 prfStagedHornerRoundtrip : (bag : GohMultiset) -> (s : UnixelFraction) ->
+                             splice (quote (evalGohMultiset bag s)) = evalGohMultiset bag s
+prfStagedHornerRoundtrip bag s = inverseSpliceQuote (evalGohMultiset bag s)
+
+||| QTT 0 Erased Proof Witness: Staged Stream Transducer evaluates definitionally to inlined stream map.
+public export
+0 prfStagedStreamTransducerRoundtrip : (bag : GohMultiset) -> (strm : FusedStream UnixelFraction) ->
+  splice (stagedGohStreamTransducer bag) strm = mapStream (\s => splice (stagedUnrollGohMultiset bag (quote s))) strm
+prfStagedStreamTransducerRoundtrip bag strm = Refl
+

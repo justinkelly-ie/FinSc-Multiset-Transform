@@ -39,7 +39,7 @@ public export
 WaveDuality : (Type -> Type) -> (Type -> Type) -> Type
 WaveDuality = Adjunction
 
-public export covering
+public export
 Adjunction FreeWave ForgetfulMonoid where
   unit x = MkMonoidView (MkWave [(x, 1)])
   counit (MkWave ((MkMonoidView val, _) :: _)) = val
@@ -77,7 +77,7 @@ duplicateWaveContext (MkWave kvs) =
   let duped = map (\(MkMonoidView x, i) => (MkMonoidView (MkWave [(MkMonoidView x, 1)]), i)) kvs
   in MkWave duped
 
-public export covering
+public export
 Comonad WaveContext where
   extract (MkWave ((MkMonoidView val, _) :: _)) = val
   extract (MkWave []) = assert_total (idris_crash "Absurd Empty State in WaveContext Comonad Extract")

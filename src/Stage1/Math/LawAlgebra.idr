@@ -2,6 +2,7 @@ module Stage1.Math.LawAlgebra
 
 import Stage0.BoxInt
 import Stage0.Multiset
+import Stage0.StructuralFuel
 import Stage0.UniverseState
 import Stage1.UnixelFraction
 import Stage1.MaxelTransform
@@ -130,19 +131,6 @@ Eq TransformStep where
   (MkTransformStep id1 o1) == (MkTransformStep id2 o2) =
     id1 == id2 && o1 == o2
 
-||| O(1) allocation deforested stream transducer scaling a multiset vector stream by a scale factor.
-||| 2LTT Staging Operation: Splicing (~t) - Evaluates compile-time stream transducers into executable transformed vector streams.
-public export covering
-fusedMultisetTransformStream : Fuel -> BoxInt -> List BoxInt -> List BoxInt
-fusedMultisetTransformStream f s steps =
-  fusedHylomorphism f
-    (\(idx, st) => case st of
-                     [] => Done
-                     v :: rest => Yield (MkTransformStep idx (mulBox s v)) (idx + 1, rest))
-    (\step, acc => outValue step :: acc)
-    []
-    (1, steps)
-
 ||| Total Nat fuel-bounded deforested stream transducer scaling a multiset vector stream.
 public export
 fusedMultisetTransformStreamNat : (fuel : Nat) -> BoxInt -> List BoxInt -> List BoxInt
@@ -157,19 +145,30 @@ fusedMultisetTransformStreamNat (S f) s steps =
       let step = MkTransformStep idx (mulBox s v)
       in loop k (idx + 1, rest) (outValue step :: acc)
 
-||| O(1) allocation deforested stream transducer evaluating total sum of transformed values across a stream.
-public export covering
-fusedComputeTotalTransformedSum : Fuel -> BoxInt -> List BoxInt -> BoxInt
-fusedComputeTotalTransformedSum f s steps =
-  fusedHylomorphism f
-    (\(idx, st) => case st of
-                     [] => Done
-                     v :: rest => Yield (MkTransformStep idx (mulBox s v)) (idx + 1, rest))
-    (\step, acc => addBox (outValue step) acc)
-    (intToBoxInt 0)
-    (1, steps)
+||| O(1) allocation deforested stream transducer scaling a multiset vector stream by a scale factor using BoxNat fuel.
+public export
+fusedMultisetTransformStreamBoxNat : (bfuel : BoxNat) -> BoxInt -> List BoxInt -> List BoxInt
+fusedMultisetTransformStreamBoxNat bfuel s steps =
+  fusedMultisetTransformStreamNat (boxNatToNat bfuel) s steps
+
+||| O(1) allocation deforested stream transducer scaling a multiset vector stream
+||| with fuel dynamically derived from Goh cyclotomic factorization of the input stream size.
+public export
+fusedMultisetTransformStreamGoh : BoxInt -> List BoxInt -> List BoxInt
+fusedMultisetTransformStreamGoh s steps =
+  fusedMultisetTransformStreamBoxNat (gohFuel (length steps)) s steps
+
+||| O(1) allocation deforested stream transducer scaling a multiset vector stream by a scale factor.
+||| 2LTT Staging Operation: Splicing (~t) - Evaluates compile-time stream transducers into executable transformed vector streams.
+public export
+fusedMultisetTransformStream : Fuel -> BoxInt -> List BoxInt -> List BoxInt
+fusedMultisetTransformStream (More f) s steps =
+  fusedMultisetTransformStreamGoh s steps
+fusedMultisetTransformStream Dry _ _ = []
 
 ||| Total Nat fuel-bounded stream transducer evaluating total sum of transformed values.
+||| When evaluating over a finite list of steps, callers should supply Goh cyclotomic
+||| factorization fuel `boxNatToNat (gohFuel (length steps))` or call `fusedComputeTotalTransformedSumGoh`.
 public export
 fusedComputeTotalTransformedSumNat : (fuel : Nat) -> BoxInt -> List BoxInt -> BoxInt
 fusedComputeTotalTransformedSumNat Z _ _ = intToBoxInt 0
@@ -182,6 +181,52 @@ fusedComputeTotalTransformedSumNat (S f) s steps =
     loop (S k) (idx, v :: rest) acc =
       let step = MkTransformStep idx (mulBox s v)
       in loop k (idx + 1, rest) (addBox (outValue step) acc)
+
+||| O(1) allocation deforested stream transducer evaluating total sum of transformed values across a stream using BoxNat fuel.
+public export
+fusedComputeTotalTransformedSumBoxNat : (bfuel : BoxNat) -> BoxInt -> List BoxInt -> BoxInt
+fusedComputeTotalTransformedSumBoxNat bfuel s steps =
+  fusedComputeTotalTransformedSumNat (boxNatToNat bfuel) s steps
+
+||| O(1) allocation deforested stream transducer evaluating total sum of transformed values across a sequence
+||| using fuel derived from the cyclotomic Goh factorization polynomial of the input sequence length.
+public export
+fusedComputeTotalTransformedSumGoh : BoxInt -> List BoxInt -> BoxInt
+fusedComputeTotalTransformedSumGoh s steps =
+  fusedComputeTotalTransformedSumBoxNat (gohFuel (length steps)) s steps
+
+||| O(1) allocation deforested stream transducer evaluating total sum of transformed values across a stream.
+||| Dynamically derives termination fuel using Goh cyclotomic factorization of the input sequence length.
+public export
+fusedComputeTotalTransformedSum : Fuel -> BoxInt -> List BoxInt -> BoxInt
+fusedComputeTotalTransformedSum (More f) s steps =
+  fusedComputeTotalTransformedSumGoh s steps
+fusedComputeTotalTransformedSum Dry _ _ = intToBoxInt 0
+
+||| Direct deforested stream transducer scaling a BoxInt stream by a scale factor.
+||| Eliminates list materialisation completely (Coutts et al. 2007 Stream Fusion).
+public export
+fusedTransformStreamDirect : BoxInt -> FusedStream BoxInt -> FusedStream BoxInt
+fusedTransformStreamDirect s strm = mapStream (mulBox s) strm
+
+||| Total Nat fuel-bounded stream transducer evaluating total sum of transformed values from a FusedStream.
+public export
+fusedComputeTotalTransformedSumStreamNat : (fuel : Nat) -> BoxInt -> FusedStream BoxInt -> BoxInt
+fusedComputeTotalTransformedSumStreamNat fuel s strm =
+  foldStreamNat fuel (\acc, v => addBox (mulBox s v) acc) (intToBoxInt 0) strm
+
+||| Total BoxNat fuel-bounded stream transducer evaluating total sum of transformed values from a FusedStream.
+public export
+fusedComputeTotalTransformedSumStreamBoxNat : BoxNat -> BoxInt -> FusedStream BoxInt -> BoxInt
+fusedComputeTotalTransformedSumStreamBoxNat bfuel s strm =
+  fusedComputeTotalTransformedSumStreamNat (boxNatToNat bfuel) s strm
+
+||| Deforested stream transducer evaluating total sum of transformed values from a FusedStream
+||| bounded by canonical Primorial 210 Master Substrate ground state fuel.
+public export
+fusedComputeTotalTransformedSumStream : BoxInt -> FusedStream BoxInt -> BoxInt
+fusedComputeTotalTransformedSumStream s strm =
+  foldStream (\acc, v => addBox (mulBox s v) acc) (intToBoxInt 0) strm
 
 ||| Structurally total deforested multiset stream transformation without Fuel.
 ||| Uses structural recursion directly over the input list of tokens.
@@ -203,8 +248,13 @@ boxComputeTotalTransformedSum : (a -> BoxInt) -> Box a -> BoxInt
 boxComputeTotalTransformedSum f (MkBox items) =
   foldl (\acc, (k, w) => addBox (mulBox (f k) w) acc) (intToBoxInt 0) items
 
+||| Stream evaluation: folds directly over a FusedStream using BoxNat fuel.
+public export
+fusedStreamTotalSumBoxNat : BoxNat -> FusedStream BoxInt -> BoxInt
+fusedStreamTotalSumBoxNat bfuel st = foldStreamNat (boxNatToNat bfuel) addBox (intToBoxInt 0) st
+
 ||| Stream evaluation: folds directly over a FusedStream without allocating intermediate list buffers.
-public export covering
+public export
 fusedStreamTotalSum : FusedStream BoxInt -> BoxInt
 fusedStreamTotalSum st = foldStream addBox (intToBoxInt 0) st
 

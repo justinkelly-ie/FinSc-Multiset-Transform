@@ -4,6 +4,7 @@ import Data.Vect
 import Data.List
 import Decidable.Equality
 import Stage0.BoxInt
+import public Stage0.BoxNat
 import Stage0.WitnessLedger
 import Stage1.UnixelFraction
 import Stage0.OnSeq.FusedStream
@@ -19,6 +20,17 @@ import Stage1.TypeTheory.Staging
 public export
 fracInt : Integer -> UnixelFraction
 fracInt n = mkUnixelFraction (intToBoxInt n) 1
+
+||| Computes exact non-negative integer power of a UnixelFraction: x^n
+public export
+powerUnixelFraction : UnixelFraction -> Nat -> UnixelFraction
+powerUnixelFraction _ Z = fracInt 1
+powerUnixelFraction x (S k) = mulUnixelFraction x (powerUnixelFraction x k)
+
+||| Computes exact power of a UnixelFraction parameterized by BoxNat multiplicity: x^m
+public export
+powerUnixelFractionBoxNat : UnixelFraction -> BoxNat -> UnixelFraction
+powerUnixelFractionBoxNat x bn = powerUnixelFraction x (boxNatToNat bn)
 
 ||| An auxiliary polynomial term extracted from the Goh factorization tree.
 ||| Expressed as an irreducible component Phi_k(s) with ascending coefficients:
@@ -105,18 +117,28 @@ gohPhi8 = GohPhi8
 ||| This tracks the collection of factors currently defining the UniverseState.
 public export
 data GohMultiset : Type where
-  EmptyBag  : GohMultiset
-  AddFactor : {deg : Nat} -> GohAuxiliary deg -> GohMultiset -> GohMultiset
+  EmptyBag   : GohMultiset
+  AddFactor  : {deg : Nat} -> GohAuxiliary deg -> GohMultiset -> GohMultiset
+  AddFactorM : {deg : Nat} -> GohAuxiliary deg -> BoxNat -> GohMultiset -> GohMultiset
 
 public export
 implementation Eq GohMultiset where
   EmptyBag == EmptyBag = True
-  -- Using heterogeneous binding matching to trap dependent dimensions
   (AddFactor {deg=d1} f1 rest1) == (AddFactor {deg=d2} f2 rest2) =
     case decEq d1 d2 of
-      -- By matching on 'Refl', d1 and d2 become syntactically unified,
-      -- allowing (f1 == f2) to type-check cleanly across the unified type universe.
       Yes Refl => (f1 == f2) && (rest1 == rest2)
+      No _     => False
+  (AddFactorM {deg=d1} f1 m1 rest1) == (AddFactorM {deg=d2} f2 m2 rest2) =
+    case decEq d1 d2 of
+      Yes Refl => (f1 == f2) && (boxNatToNat m1 == boxNatToNat m2) && (rest1 == rest2)
+      No _     => False
+  (AddFactor {deg=d1} f1 rest1) == (AddFactorM {deg=d2} f2 m2 rest2) =
+    case decEq d1 d2 of
+      Yes Refl => (f1 == f2) && (boxNatToNat m2 == 1) && (rest1 == rest2)
+      No _     => False
+  (AddFactorM {deg=d1} f1 m1 rest1) == (AddFactor {deg=d2} f2 rest2) =
+    case decEq d1 d2 of
+      Yes Refl => (f1 == f2) && (boxNatToNat m1 == 1) && (rest1 == rest2)
       No _     => False
   _ == _ = False
 
@@ -124,25 +146,61 @@ public export
 implementation Show GohMultiset where
   show EmptyBag = "EmptyBag"
   show (AddFactor {deg} _ rest) = "AddFactor (Phi_deg" ++ show deg ++ ") " ++ show rest
+  show (AddFactorM {deg} _ m rest) = "AddFactorM (Phi_deg" ++ show deg ++ "^" ++ show (boxNatToNat m) ++ ") " ++ show rest
 
-||| Counts the total number of polynomial factors in a GohMultiset.
+||| Counts the total number of polynomial factors in a GohMultiset, accounting for multiplicities.
 public export
 countFactors : GohMultiset -> Nat
 countFactors EmptyBag = 0
 countFactors (AddFactor _ rest) = S (countFactors rest)
+countFactors (AddFactorM _ m rest) = boxNatToNat m + countFactors rest
 
-||| Computes the total sum of degrees across all polynomial factors in a GohMultiset.
+||| Computes the total sum of degrees across all polynomial factors in a GohMultiset, accounting for multiplicities.
 public export
 gohDegreeSum : GohMultiset -> Nat
 gohDegreeSum EmptyBag = Z
 gohDegreeSum (AddFactor {deg} _ rest) = deg + gohDegreeSum rest
+gohDegreeSum (AddFactorM {deg} _ m rest) = (deg * boxNatToNat m) + gohDegreeSum rest
+
+||| Evaluates total structural fuel from a GohMultiset factorization tree as a BoxNat.
+public export
+gohMultisetFuelBox : GohMultiset -> BoxNat
+gohMultisetFuelBox bag =
+  let totalDeg = gohDegreeSum bag
+      totalFactors = countFactors bag
+  in natToBoxNat (S (totalDeg + totalFactors))
 
 ||| Checks if a GohAuxiliary factor has all zero coefficients.
 public export
 isZeroAuxiliary : GohAuxiliary degree -> Bool
 isZeroAuxiliary (Phi coeffs) = all (\c => rationalEquiv c zeroUnixelFraction) coeffs
 
-||| Aggregates and canonicalizes a GohMultiset by pruning zero-coefficient auxiliary factors.
+||| Inserts a factor into a GohMultiset, combining multiplicities if an identical factor is found.
+public export
+insertFactorM : {deg : Nat} -> GohAuxiliary deg -> BoxNat -> GohMultiset -> GohMultiset
+insertFactorM factor m EmptyBag =
+  if boxNatToNat m == 0 then EmptyBag else AddFactorM factor m EmptyBag
+insertFactorM {deg=d1} f1 m1 (AddFactor {deg=d2} f2 rest) =
+  if boxNatToNat m1 == 0
+     then AddFactor f2 rest
+     else case decEq d1 d2 of
+            Yes Refl =>
+              if f1 == f2
+                 then AddFactorM f1 (boxNatAdd m1 (natToBoxNat 1)) rest
+                 else AddFactor f2 (insertFactorM f1 m1 rest)
+            No _ => AddFactor f2 (insertFactorM f1 m1 rest)
+insertFactorM {deg=d1} f1 m1 (AddFactorM {deg=d2} f2 m2 rest) =
+  if boxNatToNat m1 == 0
+     then AddFactorM f2 m2 rest
+     else case decEq d1 d2 of
+            Yes Refl =>
+              if f1 == f2
+                 then AddFactorM f1 (boxNatAdd m1 m2) rest
+                 else AddFactorM f2 m2 (insertFactorM f1 m1 rest)
+            No _ => AddFactorM f2 m2 (insertFactorM f1 m1 rest)
+
+||| Aggregates and canonicalizes a GohMultiset by pruning zero-coefficient auxiliary factors
+||| and combining duplicate factors into single RLE-multiplicity AddFactorM nodes.
 public export
 canonicalizeGohMultiset : GohMultiset -> GohMultiset
 canonicalizeGohMultiset EmptyBag = EmptyBag
@@ -150,7 +208,43 @@ canonicalizeGohMultiset (AddFactor factor rest) =
   let restCan = canonicalizeGohMultiset rest
   in if isZeroAuxiliary factor
         then restCan
-        else AddFactor factor restCan
+        else insertFactorM factor (natToBoxNat 1) restCan
+canonicalizeGohMultiset (AddFactorM factor m rest) =
+  let restCan = canonicalizeGohMultiset rest
+  in if isZeroAuxiliary factor || boxNatToNat m == 0
+        then restCan
+        else insertFactorM factor m restCan
+
+||| Merges two GohMultiset factor ledgers into a single composite multiset.
+public export
+mergeGohMultiset : GohMultiset -> GohMultiset -> GohMultiset
+mergeGohMultiset EmptyBag b = b
+mergeGohMultiset (AddFactor f rest) b = AddFactor f (mergeGohMultiset rest b)
+mergeGohMultiset (AddFactorM f m rest) b = AddFactorM f m (mergeGohMultiset rest b)
+
+public export
+Semigroup GohMultiset where
+  (<+>) = mergeGohMultiset
+
+public export
+Monoid GohMultiset where
+  neutral = EmptyBag
+
+||| QTT 0 Erased Proof Witness: Left identity of GohMultiset merge.
+public export
+0 prfGohMonoidIdentityL : (b : GohMultiset) -> mergeGohMultiset EmptyBag b = b
+prfGohMonoidIdentityL _ = Refl
+
+||| QTT 0 Erased Proof Witness: Associativity of GohMultiset merge.
+public export
+0 prfGohMonoidAssociative : (a, b, c : GohMultiset) ->
+                            mergeGohMultiset a (mergeGohMultiset b c) =
+                            mergeGohMultiset (mergeGohMultiset a b) c
+prfGohMonoidAssociative EmptyBag b c = Refl
+prfGohMonoidAssociative (AddFactor f rest) b c =
+  cong (AddFactor f) (prfGohMonoidAssociative rest b c)
+prfGohMonoidAssociative (AddFactorM f m rest) b c =
+  cong (AddFactorM f m) (prfGohMonoidAssociative rest b c)
 
 --------------------------------------------------------------------------------
 -- 2. GOH SPREAD POLYNOMIAL EVALUATION & DEFORESTED STREAM TRANSDUCER
@@ -163,18 +257,66 @@ evalGohPoly : GohAuxiliary degree -> UnixelFraction -> UnixelFraction
 evalGohPoly (Phi coeffs) s =
   foldr (\c, acc => addUnixelFraction c (mulUnixelFraction s acc)) zeroUnixelFraction coeffs
 
-||| Evaluates an entire GohMultiset factorization tree P(s) = prod_{k} Phi_k(s)
-||| at an exact UnixelFraction spread value s using exact rational multiplication.
+||| Evaluates an entire GohMultiset factorization tree P(s) = prod_{k} Phi_k(s)^m_k
+||| at an exact UnixelFraction spread value s using fast BoxNat power exponentiation.
 public export
 evalGohMultiset : GohMultiset -> UnixelFraction -> UnixelFraction
 evalGohMultiset EmptyBag _ = fracInt 1
 evalGohMultiset (AddFactor factor rest) s =
   mulUnixelFraction (evalGohPoly factor s) (evalGohMultiset rest s)
+evalGohMultiset (AddFactorM factor m rest) s =
+  let n = boxNatToNat m
+  in if n == 0
+        then evalGohMultiset rest s
+        else if n == 1
+                then mulUnixelFraction (evalGohPoly factor s) (evalGohMultiset rest s)
+                else let val = evalGohPoly factor s
+                         powVal = powerUnixelFraction val n
+                     in mulUnixelFraction powVal (evalGohMultiset rest s)
 
 ||| Evaluates a GohAuxiliary spread polynomial P(s) over a deforested stream of UnixelFraction spread values.
 public export
 evalSpreadPolynumberStream : GohAuxiliary deg -> FusedStream UnixelFraction -> FusedStream UnixelFraction
 evalSpreadPolynumberStream poly st = mapStream (evalGohPoly poly) st
+
+||| A generalized wrapper for an existential GohAuxiliary factor with its BoxNat multiplicity.
+public export
+data AnyGohFactor : Type where
+  MkAnyGohFactor : {deg : Nat} -> GohAuxiliary deg -> BoxNat -> AnyGohFactor
+
+||| Zero-allocation coinductive streaming view of factors in a GohMultiset.
+public export
+streamGohMultiset : GohMultiset -> FusedStream AnyGohFactor
+streamGohMultiset bag = unfoldStream step bag
+  where
+    step : GohMultiset -> Step GohMultiset AnyGohFactor
+    step EmptyBag = Done
+    step (AddFactor factor rest) =
+      Yield (MkAnyGohFactor factor (natToBoxNat 1)) rest
+    step (AddFactorM factor m rest) =
+      Yield (MkAnyGohFactor factor m) rest
+
+||| Zero-allocation coinductive streaming view of factors and their BoxNat multiplicities.
+public export
+streamGohMultisetRLE : GohMultiset -> FusedStream (AnyGohFactor, BoxNat)
+streamGohMultisetRLE bag = mapStream (\f@(MkAnyGohFactor _ m) => (f, m)) (streamGohMultiset bag)
+
+||| Evaluates an entire GohMultiset factor ledger over a deforested stream of UnixelFraction spread values.
+public export
+evalGohMultisetStream : GohMultiset -> FusedStream UnixelFraction -> FusedStream UnixelFraction
+evalGohMultisetStream bag st = mapStream (\s => evalGohMultiset bag s) st
+
+||| Evaluates a GohMultiset at a single coordinate s using a deforested stream fold over its factors.
+public export
+fusedEvalGohMultiset : GohMultiset -> UnixelFraction -> UnixelFraction
+fusedEvalGohMultiset bag s =
+  foldStreamNat (S (countFactors bag))
+                (\acc, (MkAnyGohFactor f m) =>
+                   let baseVal = evalGohPoly f s
+                       factorVal = powerUnixelFractionBoxNat baseVal m
+                   in mulUnixelFraction acc factorVal)
+                (fracInt 1)
+                (streamGohMultiset bag)
 
 --------------------------------------------------------------------------------
 -- 3. FRACTIONAL MEASUREMENT RANGE & NESTED MULTISET STREAM RESOLUTION
@@ -297,15 +439,31 @@ public export
 stagedEmptyGohMultiset : Lift GohMultiset
 stagedEmptyGohMultiset = quote EmptyBag
 
-||| 2LTT Staged Goh Factor Insertion:
+||| Raises a GohMultiset to a BoxNat power by scaling all factor multiplicities.
 public export
-stagedAddFactor : {deg : Nat} -> Lift (GohAuxiliary deg) -> Lift GohMultiset -> Lift GohMultiset
-stagedAddFactor qFactor qBag = quote (AddFactor (splice qFactor) (splice qBag))
+powGohMultiset : GohMultiset -> BoxNat -> GohMultiset
+powGohMultiset EmptyBag _ = EmptyBag
+powGohMultiset (AddFactor factor rest) p =
+  let n = boxNatToNat p
+  in if n == 0
+        then EmptyBag
+        else AddFactorM factor p (powGohMultiset rest p)
+powGohMultiset (AddFactorM factor m rest) p =
+  let n = boxNatToNat p
+  in if n == 0
+        then EmptyBag
+        else AddFactorM factor (boxNatMul m p) (powGohMultiset rest p)
+
+||| 2LTT Staged Goh Factor Insertion with BoxNat Multiplicity:
+public export
+stagedAddFactorM : {deg : Nat} -> Lift (GohAuxiliary deg) -> Lift BoxNat -> Lift GohMultiset -> Lift GohMultiset
+stagedAddFactorM qFactor qM qBag = quote (AddFactorM (splice qFactor) (splice qM) (splice qBag))
 
 ||| QTT 0 Erased Proof Witness: Staged Goh Polynomial Round-Trip Invariance
 public export
 0 prfStagedGohRoundtrip : {deg : Nat} -> (p : GohAuxiliary deg) -> splice (stagedGohPsi p) = p
 prfStagedGohRoundtrip _ = Refl
+
 
 
 
