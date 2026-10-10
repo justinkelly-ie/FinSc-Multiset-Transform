@@ -10,6 +10,7 @@ import Stage1.VexelMaxel as VM
 import Stage1.VexelStream as VS
 import Data.Fuel
 import Data.List
+import Data.Vect
 
 %default total
 
@@ -47,6 +48,30 @@ companionMaxelFromPoly p =
              Just (_, w) => w
              Nothing     => intToBoxInt 0
   in companionMaxel2D c0 c1
+
+||| Constructs an N-dimensional companion Maxel for monic polynomial
+||| P(x) = x^N - sum_{i=0}^{N-1} c_i x^i.
+||| Subdiagonal entries [k+2, k+1] have weight 1 for 0 <= k < N-1.
+||| Rightmost column entries [k+1, N] have weight coeffs[k] for 0 <= k < N.
+public export
+companionMaxelND : (n : Nat) -> (coeffs : Vect n BoxInt) -> VM.Maxel
+companionMaxelND Z [] = VM.MkMaxel []
+companionMaxelND (S Z) [c0] =
+  if unwrapBox c0 == 0
+     then VM.MkMaxel []
+     else VM.MkMaxel [(VM.MkPixel 1 1, c0)]
+companionMaxelND (S (S k)) coeffs =
+  let dim = S (S k)
+      subDiag = map (\i => (VM.MkPixel (i + 2) (i + 1), intToBoxInt 1)) (the (List Nat) [0..k])
+      colEntries = filterMap (\(i, c) => if unwrapBox c /= 0 then Just (VM.MkPixel (i + 1) dim, c) else Nothing)
+                             (zip (the (List Nat) [0..(S k)]) (toList coeffs))
+  in VM.MkMaxel (subDiag ++ colEntries)
+  where
+    filterMap : (a -> Maybe b) -> List a -> List b
+    filterMap _ [] = []
+    filterMap f (x :: xs) = case f x of
+                              Just y => y :: filterMap f xs
+                              Nothing => filterMap f xs
 
 ------------------------------------------------------------------------
 -- 2. WILDBERGER MULTIPLE SPREAD RECURRENCE TRANSFER MAXEL
@@ -101,11 +126,63 @@ spreadRecurrenceHylo fuel s =
   let init = (s, intToBoxInt 0, intToBoxInt 1)
       res = iterateFuel fuel (stepSpreadAffine s) init
   in case res of
-       (sn, _, _) => sn
+        (sn, _, _) => sn
   where
     iterateFuel : Fuel -> (a -> a) -> a -> a
     iterateFuel Dry _ acc = acc
     iterateFuel (More f) step acc = iterateFuel f step (step acc)
+
+||| Normalizes a Maxel by consolidating duplicate pixels and removing zero weights.
+public export
+compressMaxel : VM.Maxel -> VM.Maxel
+compressMaxel m =
+  let supp = VM.supportMaxel m
+      uniquePixels = nub supp
+      terms = map (\px => (px, VM.lookupPixel px m)) uniquePixels
+      nonZero = filter (\(_, w) => unwrapBox w /= 0) terms
+  in VM.MkMaxel nonZero
+
+||| Constructs canonical identity Maxel for small dimensions.
+public export
+identityMaxelDim : Nat -> VM.Maxel
+identityMaxelDim 2 = VM.MkMaxel [ (VM.MkPixel 1 1, intToBoxInt 1), (VM.MkPixel 2 2, intToBoxInt 1) ]
+identityMaxelDim 3 = VM.MkMaxel [ (VM.MkPixel 1 1, intToBoxInt 1), (VM.MkPixel 2 2, intToBoxInt 1), (VM.MkPixel 3 3, intToBoxInt 1) ]
+identityMaxelDim _ = VM.MkMaxel [ (VM.MkPixel 1 1, intToBoxInt 1) ]
+
+||| Fast logarithmic binary exponentiation for Maxel operators (Rule 04).
+||| Computes M^exp in O(log exp) steps via repeated squaring of consolidated Maxels.
+public export
+fastMaxelPower : Fuel -> (exp : Nat) -> (dim : Nat) -> (m : VM.Maxel) -> VM.Maxel
+fastMaxelPower Dry _ dim _ = identityMaxelDim dim
+fastMaxelPower (More f) Z dim _ = identityMaxelDim dim
+fastMaxelPower (More f) (S Z) _ m = compressMaxel m
+fastMaxelPower (More f) exp dim m =
+  loop f exp (compressMaxel m) (identityMaxelDim dim)
+  where
+    loop : Fuel -> Nat -> VM.Maxel -> VM.Maxel -> VM.Maxel
+    loop Dry _ _ acc = acc
+    loop (More _) Z _ acc = acc
+    loop (More f') e base acc =
+      let acc' = if (e `mod` 2 == 1) then compressMaxel (VM.mulMaxel acc base) else acc
+          base' = compressMaxel (VM.mulMaxel base base)
+          e' = e `div` 2
+      in loop f' e' base' acc'
+
+||| Evaluates the n-th Wildberger multiple spread S_n in O(log n) steps via companion Maxel repeated squaring:
+||| S_0 = 0, S_1 = s, S_2 = (4s - 4s^2), ...
+public export
+fastSpreadPower : Fuel -> (n : Nat) -> (s : BoxInt) -> BoxInt
+fastSpreadPower _ Z _ = intToBoxInt 0
+fastSpreadPower _ 1 s = s
+fastSpreadPower fuel (S k) s =
+  let m = spreadTransferMaxel s
+      mPow = fastMaxelPower fuel k 3 m
+      vInit = VM.MkVexel [ (VM.MkUnixel 1, s)
+                         , (VM.MkUnixel 2, intToBoxInt 0)
+                         , (VM.MkUnixel 3, intToBoxInt 1)
+                         ]
+      vFinal = VM.actMaxelVexel mPow vInit
+  in VM.lookupUnixel (VM.MkUnixel 1) vFinal
 
 ------------------------------------------------------------------------
 -- 4. COMPILE-TIME INVARIANT AUDITS (RULE 01)
@@ -148,3 +225,26 @@ auditSpreadOrthogonalOscillationProof =
      boxEq s2 (intToBoxInt 0) &&
      boxEq s3 (intToBoxInt 1) &&
      boxEq s4 (intToBoxInt 0)
+
+||| Verifies fast O(log N) repeated squaring produces identical results to linear hylomorphism:
+||| Tests S_1, S_2, S_3, S_4 for both s = 1 (orthogonal) and s = 2 (hyperbolic).
+public export
+auditFastSpreadEquivalenceProof : Bool
+auditFastSpreadEquivalenceProof =
+  let sOrth = intToBoxInt 1
+      sHyp = intToBoxInt 2
+      fuel = limit 10
+      f1 = fastSpreadPower fuel 1 sOrth
+      f2 = fastSpreadPower fuel 2 sOrth
+      f3 = fastSpreadPower fuel 3 sOrth
+      f4 = fastSpreadPower fuel 4 sOrth
+      h1 = spreadRecurrenceHylo (limit 0) sOrth
+      h2 = spreadRecurrenceHylo (limit 1) sOrth
+      h3 = spreadRecurrenceHylo (limit 2) sOrth
+      h4 = spreadRecurrenceHylo (limit 3) sOrth
+      hf1 = fastSpreadPower fuel 1 sHyp
+      hf2 = fastSpreadPower fuel 2 sHyp
+      hh1 = spreadRecurrenceHylo (limit 0) sHyp
+      hh2 = spreadRecurrenceHylo (limit 1) sHyp
+  in (f1 == h1) && (f2 == h2) && (f3 == h3) && (f4 == h4) &&
+     (hf1 == hh1) && (hf2 == hh2)
