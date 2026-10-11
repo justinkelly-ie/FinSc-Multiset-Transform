@@ -1,5 +1,9 @@
 module Stage1.Goh
 
+import public Stage1.Goh.Factor
+import public Stage1.Goh.Combinator
+import public Stage1.Goh.Functor
+
 import Data.Vect
 import Data.List
 import Decidable.Equality
