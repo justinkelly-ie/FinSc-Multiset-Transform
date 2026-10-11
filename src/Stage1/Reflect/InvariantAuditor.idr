@@ -6,7 +6,7 @@ import Stage0.Multiset
 import Stage0.UniverseState
 import Stage1.FourGeometries
 import Stage1.ScalePipeline
-import Stage1.TypeTheory.Smooth13
+import Stage1.TypeTheory.Smoothness
 import Stage1.TypeTheory.TwoLevel
 import Stage1.TypeTheory.Staging
 
@@ -81,11 +81,15 @@ auditScalePipelineConservationProof =
       wOut = sumBiomoduleWeights outputCells
   in boxEq wIn wOut
 
-||| Pure compile-time verification of 13-smooth cosmic dimension for Primorial 210:
+||| Pure compile-time verification of smooth cosmic dimension for Primorial 210:
+public export
+auditSmoothCosmicStateProof : Bool
+auditSmoothCosmicStateProof =
+  isSmoothNat CosmicSmoothHorizon 210
+
 public export
 auditSmooth13CosmicStateProof : Bool
-auditSmooth13CosmicStateProof =
-  is13SmoothNat 210
+auditSmooth13CosmicStateProof = auditSmoothCosmicStateProof
 
 ||| Pure compile-time verification that discrete Helmholtz Free Energy F = U - TS
 ||| achieves its unique global minimum F = -1320 at the Primorial 210 ground state (Rule 03).
@@ -124,7 +128,12 @@ public export
 auditScalePipelineConservationMacro : Elab (Stage1.Reflect.InvariantAuditor.auditScalePipelineConservationProof = True)
 auditScalePipelineConservationMacro = pure Refl
 
-||| Compile-time audit macro verifying 13-smooth cosmic dimension boundary.
+||| Compile-time audit macro verifying smooth cosmic dimension boundary.
+public export
+%macro
+auditSmoothCosmicStateMacro : Elab (Stage1.Reflect.InvariantAuditor.auditSmoothCosmicStateProof = True)
+auditSmoothCosmicStateMacro = pure Refl
+
 public export
 %macro
 auditSmooth13CosmicStateMacro : Elab (Stage1.Reflect.InvariantAuditor.auditSmooth13CosmicStateProof = True)

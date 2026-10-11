@@ -7,8 +7,8 @@ import Stage0.WitnessLedger
 import Stage0.UniverseState
 import Stage1.VexelMaxel
 import Stage1.TypeTheory.TwoLevel
-import Stage1.TypeTheory.Smooth13
-import Stage1.Smooth13UniverseState
+import Stage1.TypeTheory.Smoothness
+import Stage1.SmoothUniverseState
 
 %default total
 
@@ -74,26 +74,43 @@ stepStratifiedUniverse (MkStratifiedUniverseState (MkStrict st) _) newMatter =
   let updated = stepUniverseLinear st newMatter
   in mkStratifiedUniverseState updated
 
-||| A 2LTT StratifiedUniverseState whose total capacity (vm + de + dm) is certified 13-smooth at compile time
+||| A 2LTT StratifiedUniverseState whose total capacity (vm + de + dm) is certified smooth at compile time
 public export
-record Smooth13StratifiedUniverseState (vm : Nat) (de : Nat) (dm : Nat) where
-  constructor MkSmooth13StratifiedUniverseState
+record SmoothStratifiedUniverseState (bound : Nat) (vm : Nat) (de : Nat) (dm : Nat) where
+  constructor MkSmoothStratifiedUniverseState
   stratifiedState : StratifiedUniverseState vm de dm
-  smoothProof     : Smooth13Dimension (vm + de + dm)
+  smoothProof     : SmoothDimensionWitness bound (vm + de + dm)
 
 public export
-{vm, de, dm : Nat} -> Eq (Smooth13StratifiedUniverseState vm de dm) where
-  (MkSmooth13StratifiedUniverseState s1 _) == (MkSmooth13StratifiedUniverseState s2 _) = s1 == s2
+{bound, vm, de, dm : Nat} -> Eq (SmoothStratifiedUniverseState bound vm de dm) where
+  (MkSmoothStratifiedUniverseState s1 _) == (MkSmoothStratifiedUniverseState s2 _) = s1 == s2
 
 public export
-{vm, de, dm : Nat} -> Show (Smooth13StratifiedUniverseState vm de dm) where
-  show (MkSmooth13StratifiedUniverseState _ _) = "Smooth13StratifiedUniverseState(" ++ show (vm + de + dm) ++ ")"
+{bound, vm, de, dm : Nat} -> Show (SmoothStratifiedUniverseState bound vm de dm) where
+  show (MkSmoothStratifiedUniverseState _ _) = "SmoothStratifiedUniverseState(" ++ show bound ++ ", " ++ show (vm + de + dm) ++ ")"
 
-||| Constructs a 2LTT Smooth13StratifiedUniverseState from a Smooth13UniverseState
+||| Canonical 13-smooth stratified universe state carrier.
 public export
-mkSmooth13StratifiedUniverseState : Smooth13UniverseState vm de dm -> Smooth13StratifiedUniverseState vm de dm
-mkSmooth13StratifiedUniverseState (MkSmooth13UniverseState st prf) =
-  MkSmooth13StratifiedUniverseState (mkStratifiedUniverseState st) prf
+CosmicSmoothStratifiedUniverseState : (vm : Nat) -> (de : Nat) -> (dm : Nat) -> Type
+CosmicSmoothStratifiedUniverseState = SmoothStratifiedUniverseState CosmicSmoothHorizon
+
+||| Constructs a 2LTT SmoothStratifiedUniverseState from a SmoothUniverseState
+public export
+mkSmoothStratifiedUniverseState : SmoothUniverseState bound vm de dm -> SmoothStratifiedUniverseState bound vm de dm
+mkSmoothStratifiedUniverseState (MkSmoothUniverseState st prf) =
+  MkSmoothStratifiedUniverseState (mkStratifiedUniverseState st) prf
+
+------------------------------------------------------------------------
+-- BACKWARD-COMPATIBILITY ALIASES
+------------------------------------------------------------------------
+
+public export
+Smooth13StratifiedUniverseState : (vm : Nat) -> (de : Nat) -> (dm : Nat) -> Type
+Smooth13StratifiedUniverseState = CosmicSmoothStratifiedUniverseState
+
+public export
+mkSmooth13StratifiedUniverseState : CosmicSmoothUniverseState vm de dm -> CosmicSmoothStratifiedUniverseState vm de dm
+mkSmooth13StratifiedUniverseState = mkSmoothStratifiedUniverseState
 
 ||| QTT 0 erased proof witness verifying Primorial 210 Cosmic Multiset Budget Conservation (27 + 128 + 55 = 210).
 public export
