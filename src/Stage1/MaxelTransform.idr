@@ -494,6 +494,20 @@ applyPushforwardParallel : Eq a => Eq b => MaxelTransform a b -> Box a -> Box b
 applyPushforwardParallel (MkMaxelTransform _ _ (MkBox tPairs)) state =
   evalTransformBranch (S (length tPairs)) tPairs state
 
+||| Audits parallel pushforward tree reduction against serial application.
+public export
+auditParallelPushforwardProof : Bool
+auditParallelPushforwardProof =
+  let pairs : List (((Nat, Nat)), BoxInt)
+      pairs = [ (((0, 0)), intToBoxInt 2), (((1, 1)), intToBoxInt 3) ]
+      t = MkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxInt 1) 1) (MkBox pairs)
+      st : Box Nat
+      st = insertBox 0 (intToBoxInt 5) (insertBox 1 (intToBoxInt 7) emptyBox)
+      serialRes = applyPushforward t st
+      parRes = applyPushforwardParallel t st
+  in (lookupBox 0 serialRes == lookupBox 0 parRes) && (lookupBox 1 serialRes == lookupBox 1 parRes)
+
+
 ------------------------------------------------------------------------
 -- 13. MULTISET BETA-REDUCTION FRAMEWORK & STREAMING CONTRACTIONS
 ------------------------------------------------------------------------
