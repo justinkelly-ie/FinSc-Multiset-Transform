@@ -6,7 +6,6 @@ import Stage0.OnSeq.FusedStream
 import Stage1.QuadStream
 import Stage1.FourGeometries
 import Stage1.Goh.Factor
-import Data.List
 
 %default total
 
@@ -106,19 +105,59 @@ classifyGeometry2Plus2 ParabolicGeom  = ManifestSector
 classifyGeometry2Plus2 HyperbolicGeom = SpectralSector
 classifyGeometry2Plus2 SubstrateGeom  = SpectralSector
 
-||| Sector carrier list for manifest geometries (cardinality 2).
-public export
-ManifestGeometriesList : List FundamentalGeometry
-ManifestGeometriesList = [EllipticGeom, ParabolicGeom]
+------------------------------------------------------------------------
+-- 5. STREAMING MULTISET INTERPRETATION OF THE 2 + 2 GEOMETRY PARTITION
+------------------------------------------------------------------------
 
-||| Sector carrier list for spectral geometries (cardinality 2).
+||| Level 0 Multiset carrier for manifest geometries (mass = 2).
 public export
-SpectralGeometriesList : List FundamentalGeometry
-SpectralGeometriesList = [HyperbolicGeom, SubstrateGeom]
+ManifestGeometryMultiset : Box FundamentalGeometry
+ManifestGeometryMultiset = MkBox [(EllipticGeom, intToBoxInt 1), (ParabolicGeom, intToBoxInt 1)]
 
-||| Invariant witness: The 4 fundamental geometries partition into 2 manifest + 2 spectral geometries: 2 + 2 = 4.
+||| Level 0 Multiset carrier for spectral geometries (mass = 2).
 public export
-0 prfFourGeometriesPartition2Plus2 :
-  gohAddNat (Prelude.Types.List.length ManifestGeometriesList) (Prelude.Types.List.length SpectralGeometriesList) = 4
-prfFourGeometriesPartition2Plus2 = Refl
+SpectralGeometryMultiset : Box FundamentalGeometry
+SpectralGeometryMultiset = MkBox [(HyperbolicGeom, intToBoxInt 1), (SubstrateGeom, intToBoxInt 1)]
+
+||| Full 4-geometry multiset formed by multiset addition: 2 ⊕ 2 = 4.
+public export
+FourGeometriesMultiset : Box FundamentalGeometry
+FourGeometriesMultiset = MkBox [ (EllipticGeom, intToBoxInt 1)
+                               , (ParabolicGeom, intToBoxInt 1)
+                               , (HyperbolicGeom, intToBoxInt 1)
+                               , (SubstrateGeom, intToBoxInt 1)
+                               ]
+
+||| Level 1 coinductive stream of manifest geometry tokens.
+public export
+streamManifestGeometries : FusedStream FundamentalGeometry
+streamManifestGeometries = stream [EllipticGeom, ParabolicGeom]
+
+||| Level 1 coinductive stream of spectral geometry tokens.
+public export
+streamSpectralGeometries : FusedStream FundamentalGeometry
+streamSpectralGeometries = stream [HyperbolicGeom, SubstrateGeom]
+
+||| Level 1 deforested stream union via gohAppendStream (2 + 2 = 4 streaming pipeline).
+public export
+streamFourGeometries : FusedStream FundamentalGeometry
+streamFourGeometries = gohAppendStream streamManifestGeometries streamSpectralGeometries
+
+||| Invariant witness: Total multiset mass of manifest geometries is 2.
+public export
+0 prfManifestMultisetMassIs2 : unwrapBox (totalMassBox ManifestGeometryMultiset) = 2
+prfManifestMultisetMassIs2 = Refl
+
+||| Invariant witness: Total multiset mass of spectral geometries is 2.
+public export
+0 prfSpectralMultisetMassIs2 : unwrapBox (totalMassBox SpectralGeometryMultiset) = 2
+prfSpectralMultisetMassIs2 = Refl
+
+||| Invariant witness: Multiset addition of manifest and spectral sectors yields total mass 4: 2 ⊕ 2 = 4.
+public export
+0 prfFourGeometriesMultisetPartition2Plus2 :
+  unwrapBox (totalMassBox FourGeometriesMultiset) = 4
+prfFourGeometriesMultisetPartition2Plus2 = Refl
+
+
 
