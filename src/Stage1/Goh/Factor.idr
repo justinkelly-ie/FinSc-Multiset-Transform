@@ -193,3 +193,10 @@ prfFactor3RootAt3 = Refl
 public export
 0 prfVacuumQuadranceSumIs13 : unwrapBox (vacuumQuadrance Factor2) + unwrapBox (vacuumQuadrance Factor3) = 13
 prfVacuumQuadranceSumIs13 = Refl
+
+||| Invariant witness: Dyadic Factor 2 vacuum quadrance Q(2) = 4 embodies the 2 + 2 factorisation:
+||| Q(2) = 2^2 = 2 + 2 = 4.
+public export
+0 prfFactor2QuadranceIs4 : unwrapBox (vacuumQuadrance Factor2) = 4
+prfFactor2QuadranceIs4 = Refl
+

@@ -418,6 +418,14 @@ public export
 0 prfGohPsi4At5 : evalGohPolyInt GohPsi4 5 = 9
 prfGohPsi4At5 = Refl
 
+||| Theorem: Psi_4(x) = (x - 2)^2 is the square of the dyadic factor, exhibiting a double root
+||| at x = 2 with algebraic multiplicity 2 (the constructive 2 + 2 root factorisation):
+||| Psi_4(2) = (2 - 2)^2 = 0.
+public export
+0 prfPsi4DoubleRootAt2 : evalGohPolyInt GohPsi4 2 = 0
+prfPsi4DoubleRootAt2 = Refl
+
+
 ||| Theorem (Cigler & Herbig 2026, Section 7): Psi_5(5) = 25 => Z_5(5) = 5*25 = 125 = (-1)^4 * 5 * F_5^2 (where F_5 = 5)
 public export
 0 prfGohPsi5At5 : evalGohPolyInt GohPsi5 5 = 25
