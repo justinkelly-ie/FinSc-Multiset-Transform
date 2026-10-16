@@ -1,9 +1,10 @@
 module Stage1.Goh.Factor
 
+import public Stage0.PrimeMultiset
+import public Stage1.TypeTheory.Smoothness
 import Stage0.BoxInt
 import Stage1.UnixelFraction
 import Stage1.FourGeometries
-import Stage1.TypeTheory.Smoothness
 import Data.Vect
 import Decidable.Equality
 
@@ -12,91 +13,6 @@ import Decidable.Equality
 ------------------------------------------------------------------------
 -- 1. CONSTRUCTIVIST GOH PRIME SPECTRUM & POLYNOMIAL DEGREE
 ------------------------------------------------------------------------
-
-||| Constructivist Goh prime family indexed by its exact prime number p.
-||| Bounded by the 13-smooth horizon: {2, 3, 5, 7, 11, 13}.
-public export
-data GohPrime : (p : Nat) -> Type where
-  Prime2  : GohPrime 2
-  Prime3  : GohPrime 3
-  Prime5  : GohPrime 5
-  Prime7  : GohPrime 7
-  Prime11 : GohPrime 11
-  Prime13 : GohPrime 13
-
--- Dependently typed canonical constants:
-public export gohPrime2  : GohPrime 2;  gohPrime2  = Prime2
-public export gohPrime3  : GohPrime 3;  gohPrime3  = Prime3
-public export gohPrime5  : GohPrime 5;  gohPrime5  = Prime5
-public export gohPrime7  : GohPrime 7;  gohPrime7  = Prime7
-public export gohPrime11 : GohPrime 11; gohPrime11 = Prime11
-public export gohPrime13 : GohPrime 13; gohPrime13 = Prime13
-
-||| Existential Sigma-pair used when prime indices vary dynamically
-||| (e.g. lists of prime factors extracted from an arbitrary Nat n).
-public export
-AnyGohPrime : Type
-AnyGohPrime = (p : Nat ** GohPrime p)
-
-||| Project the underlying Nat prime from an existential pair.
-public export
-gohPrimeNat : AnyGohPrime -> Nat
-gohPrimeNat (p ** _) = p
-
-public export
-allGohPrimes : Vect 6 AnyGohPrime
-allGohPrimes = [(2 ** Prime2), (3 ** Prime3), (5 ** Prime5), (7 ** Prime7), (11 ** Prime11), (13 ** Prime13)]
-
-public export
-decideGohPrime : (p : Nat) -> Dec (GohPrime p)
-decideGohPrime 2  = Yes Prime2
-decideGohPrime 3  = Yes Prime3
-decideGohPrime 5  = Yes Prime5
-decideGohPrime 7  = Yes Prime7
-decideGohPrime 11 = Yes Prime11
-decideGohPrime 13 = Yes Prime13
-decideGohPrime 0  = No (\case Prime2 impossible)
-decideGohPrime 1  = No (\case Prime2 impossible)
-decideGohPrime 4  = No (\case Prime2 impossible)
-decideGohPrime 6  = No (\case Prime2 impossible)
-decideGohPrime 8  = No (\case Prime2 impossible)
-decideGohPrime 9  = No (\case Prime2 impossible)
-decideGohPrime 10 = No (\case Prime2 impossible)
-decideGohPrime 12 = No (\case Prime2 impossible)
-decideGohPrime (S (S (S (S (S (S (S (S (S (S (S (S (S (S _)))))))))))))) =
-  No (\case Prime2 impossible; Prime3 impossible; Prime5 impossible; Prime7 impossible; Prime11 impossible; Prime13 impossible)
-
-public export
-toGohPrime : (p : Nat) -> Maybe AnyGohPrime
-toGohPrime p = case decideGohPrime p of
-  Yes prf => Just (p ** prf)
-  No _    => Nothing
-
-public export
-Eq AnyGohPrime where
-  (p1 ** _) == (p2 ** _) = p1 == p2
-
-public export
-Show AnyGohPrime where
-  show (p ** _) = "GohPrime(" ++ show p ++ ")"
-
-||| Constructive mapping from any constructivist Goh prime to its 13-smooth certificate.
-public export
-gohPrimeWitness : GohPrime p -> SmoothWitness CosmicSmoothHorizon p
-gohPrimeWitness Prime2  = prfSmooth2
-gohPrimeWitness Prime3  = Refl
-gohPrimeWitness Prime5  = Refl
-gohPrimeWitness Prime7  = Refl
-gohPrimeWitness Prime11 = Refl
-gohPrimeWitness Prime13 = Refl
-
-public export
-gohPrimeDimension : {p : Nat} -> GohPrime p -> CosmicDimension
-gohPrimeDimension prf = (p ** gohPrimeWitness prf)
-
-public export
-anyGohPrimeDimension : AnyGohPrime -> CosmicDimension
-anyGohPrimeDimension (p ** prf) = (p ** gohPrimeWitness prf)
 
 ||| Determines the exact algebraic degree of the cyclotomic factor Phi_p(x).
 public export
