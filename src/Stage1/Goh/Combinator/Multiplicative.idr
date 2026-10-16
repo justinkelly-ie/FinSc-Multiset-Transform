@@ -17,6 +17,17 @@ public export
 gohMulNat : (p : Nat) -> (q : Nat) -> Nat
 gohMulNat p q = p * q
 
+||| Multiplicative Goh combinator over dependently typed Goh primes: p ⊗ q = p * q.
+public export
+gohMulPrimeNat : {p, q : Nat} -> GohPrime p -> GohPrime q -> Nat
+gohMulPrimeNat {p} {q} _ _ = gohMulNat p q
+
+||| Observer Epoch composite scale factorization from dependently typed primes: 3 ⊗ 13 = 39.
+public export
+0 prfObserverPrimeProduct : gohMulPrimeNat Prime3 Prime13 = 39
+prfObserverPrimeProduct = Refl
+
+
 ||| Multiplicative Goh combinator over BoxInt: p ⊗ q = p * q.
 public export
 gohMulBox : BoxInt -> BoxInt -> BoxInt

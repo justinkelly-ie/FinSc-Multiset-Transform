@@ -178,13 +178,18 @@ prop_wildberger13SmoothGohSifting n =
 -- 5. GOH PRIME FACTORIZATION CATEGORY-THEORETIC ADJUNCTION CHAIN (L_p ⊣ R_p)
 --------------------------------------------------------------------------------
 
+||| Dynamically extracts all constructivist Goh prime factors of a given Nat n.
+public export
+gohPrimeFactors : Nat -> List AnyGohPrime
+gohPrimeFactors n = mapMaybe toGohPrime (primeFactors n)
+
 ||| Formal Goh Prime Adjunction Chain record representing the composite tensor-hom adjunction (L = ⨂ L_p ⊣ R = ⨂ R_p)
 public export
 record GohPrimeAdjunctionChain (n : Nat) where
   constructor MkGohPrimeAdjunctionChain
-  primeFactorsList     : List Nat  -- Prime factors p | n driving primitive Galois adjoints (L_p ⊣ R_p)
-  primeAdjointCount    : Nat       -- Total number of primitive prime adjoints in chain
-  primeTotientCapacity : Nat       -- Accumulated totient capacity sum_{p|n} φ(p)
+  gohPrimes            : List AnyGohPrime  -- Certified Goh primes p | n driving primitive Galois adjoints (L_p ⊣ R_p)
+  primeAdjointCount    : Nat               -- Total number of primitive prime adjoints in chain
+  primeTotientCapacity : Nat               -- Accumulated totient capacity sum_{p|n} φ(p)
 
 public export
 Eq (GohPrimeAdjunctionChain n) where
@@ -195,16 +200,16 @@ Eq (GohPrimeAdjunctionChain n) where
 public export
 buildGohPrimeAdjunctionChain : (n : Nat) -> GohPrimeAdjunctionChain n
 buildGohPrimeAdjunctionChain n =
-  let ps = primeFactors n
+  let ps = gohPrimeFactors n
       count = length ps
-      totCap = sum (map totientNat ps)
+      totCap = sum (map (\gp => totientNat (gohPrimeNat gp)) ps)
   in MkGohPrimeAdjunctionChain ps count totCap
 
 ||| Decomposes a composite GohPrimeAdjunctionChain n into parallel prime factor tensor capacity pairs
 public export
-primeAdjunctionTensorDecompose : GohPrimeAdjunctionChain n -> List (Nat, Nat)
+primeAdjunctionTensorDecompose : GohPrimeAdjunctionChain n -> List (AnyGohPrime, Nat)
 primeAdjunctionTensorDecompose chain =
-  map (\p => (p, totientNat p)) chain.primeFactorsList
+  map (\gp => (gp, totientNat (gohPrimeNat gp))) chain.gohPrimes
 
 ||| Verifies Goh Prime Adjunction Unit/Counit Round-Trip Invariance (η : I ≅ R ∘ L)
 public export
@@ -213,7 +218,7 @@ prop_gohPrimeAdjunctionUnitInvariance Z = True
 prop_gohPrimeAdjunctionUnitInvariance n =
   let chain = buildGohPrimeAdjunctionChain n
       tot = totientSumDivisors n
-  in (tot == n) && (chain.primeAdjointCount == length chain.primeFactorsList)
+  in (tot == n) && (chain.primeAdjointCount == length chain.gohPrimes)
 
 ||| Verifies that the sum of prime factor totient capacities in the decomposed tensor matches primeTotientCapacity
 public export
@@ -232,13 +237,15 @@ applyPrimeAdjunctionPushforward chain EmptyBag = EmptyBag
 applyPrimeAdjunctionPushforward chain (AddFactorM {deg} factor m rest) =
   let pairs = primeAdjunctionTensorDecompose chain
       restPushed = applyPrimeAdjunctionPushforward chain rest
-  in if any (\(p, _) => deg `mod` p == 0) pairs
+      degInt = cast {to = Integer} deg
+  in if any (\(gp, _) => let pInt = cast {to = Integer} (gohPrimeNat gp) in degInt `mod` pInt == 0) pairs
         then AddFactorM factor m restPushed
         else restPushed
 applyPrimeAdjunctionPushforward chain (AddFactor {deg} factor rest) =
   let pairs = primeAdjunctionTensorDecompose chain
       restPushed = applyPrimeAdjunctionPushforward chain rest
-  in if any (\(p, _) => deg `mod` p == 0) pairs
+      degInt = cast {to = Integer} deg
+  in if any (\(gp, _) => let pInt = cast {to = Integer} (gohPrimeNat gp) in degInt `mod` pInt == 0) pairs
         then AddFactor factor restPushed
         else restPushed
 
