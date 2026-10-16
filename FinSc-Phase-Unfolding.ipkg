@@ -8,7 +8,7 @@ sourcedir = "src"
 
 modules = PhaseUnfolding,
           Stage1.ScalePipeline.StreamDuality,
-          Stage1.SmoothUniverseState,
+          Stage1.UniverseState,
           Stage1.PixelStaging,
           Stage1.FractionStaging,
           Stage1.MaxelStaging,

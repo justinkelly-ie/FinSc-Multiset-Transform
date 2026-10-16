@@ -6,6 +6,7 @@ import Stage0.OnSeq.FusedStream
 import Stage1.QuadStream
 import Stage1.FourGeometries
 import Stage1.Goh.Factor
+import Stage1.TypeTheory.Smoothness
 
 %default total
 
@@ -158,6 +159,12 @@ public export
 0 prfFourGeometriesMultisetPartition2Plus2 :
   unwrapBox (totalMassBox FourGeometriesMultiset) = 4
 prfFourGeometriesMultisetPartition2Plus2 = Refl
+
+||| Validated 13-smooth dimension of the 4-geometry multiset carrier (2 ⊕ 2 = 4).
+public export
+fourGeometriesDimension : CosmicDimension
+fourGeometriesDimension = (the Nat 4 ** prfSmooth4)
+
 
 
 

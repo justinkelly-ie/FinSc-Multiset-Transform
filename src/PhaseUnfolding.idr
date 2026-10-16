@@ -2,7 +2,7 @@ module PhaseUnfolding
 
 import public MetricSubstrate
 import public Stage1.ScalePipeline.StreamDuality
-import public Stage1.SmoothUniverseState
+import public Stage1.UniverseState
 import public Stage1.PixelStaging
 import public Stage1.FractionStaging
 import public Stage1.MaxelStaging

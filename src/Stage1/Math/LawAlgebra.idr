@@ -7,7 +7,7 @@ import Stage0.UniverseState
 import Stage1.UnixelFraction
 import Stage1.MaxelTransform
 import Stage1.TypeTheory.Smoothness
-import Stage1.SmoothUniverseState
+import Stage1.UniverseState
 import Stage1.Order.Preorder
 import Stage0.OnSeq.FusedStream
 import Data.Fuel
@@ -37,20 +37,20 @@ subsumesBox [] m1 m2 = True
 subsumesBox (x :: xs) m1 m2 =
   (unwrapBox (lookupBox x m1) <= unwrapBox (lookupBox x m2)) && subsumesBox xs m1 m2
 
-||| A Law Algebra state carrying smooth UniverseState capacity certification
+||| A Law Algebra state carrying certified UniverseState capacity
 public export
-record SmoothLawState (bound : Nat) (vm : Nat) (de : Nat) (dm : Nat) where
-  constructor MkSmoothLawState
-  lawState    : SmoothUniverseState bound vm de dm
-  smoothProof : SmoothDimensionWitness bound (vm + de + dm)
+record LawState (bound : Nat) (vm : Nat) (de : Nat) (dm : Nat) where
+  constructor MkLawState
+  lawState      : UniverseState bound vm de dm
+  capacityProof : DimensionWitness bound (vm + de + dm)
 
 public export
-{bound, vm, de, dm : Nat} -> Eq (SmoothLawState bound vm de dm) where
-  (MkSmoothLawState s1 _) == (MkSmoothLawState s2 _) = s1 == s2
+{bound, vm, de, dm : Nat} -> Eq (LawState bound vm de dm) where
+  (MkLawState s1 _) == (MkLawState s2 _) = s1 == s2
 
 public export
-Smooth13LawState : (vm : Nat) -> (de : Nat) -> (dm : Nat) -> Type
-Smooth13LawState = SmoothLawState CosmicSmoothHorizon
+CosmicLawState : (vm : Nat) -> (de : Nat) -> (dm : Nat) -> Type
+CosmicLawState = LawState CosmicSmoothHorizon
 
 ------------------------------------------------------------------------
 -- 3. FORMAL INVARIANT AUDIT PROOFS

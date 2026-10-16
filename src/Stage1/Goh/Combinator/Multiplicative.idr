@@ -4,6 +4,7 @@ import Stage0.BoxInt
 import Stage0.Multiset
 import Stage1.QuadStream
 import Stage1.Goh.Factor
+import Stage1.TypeTheory.Smoothness
 
 %default total
 
@@ -57,3 +58,14 @@ prfPrimorial210Factorization = Refl
 public export
 0 prfBoxMulMatchesNat : unwrapBox (gohMulBox (intToBoxInt 3) (intToBoxInt 13)) = 39
 prfBoxMulMatchesNat = Refl
+
+||| Validated 13-smooth composite dimension of the Observer Epoch (3 ⊗ 13 = 39).
+public export
+observerDimension : CosmicDimension
+observerDimension = (the Nat 39 ** prfSmooth39)
+
+||| Validated 13-smooth composite dimension of the Primorial 210 Ground State (2 ⊗ 3 ⊗ 5 ⊗ 7 = 210).
+public export
+primorialDimension : CosmicDimension
+primorialDimension = (the Nat 210 ** prfSmooth210)
+

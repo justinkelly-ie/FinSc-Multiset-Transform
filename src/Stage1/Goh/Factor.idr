@@ -3,6 +3,7 @@ module Stage1.Goh.Factor
 import Stage0.BoxInt
 import Stage1.UnixelFraction
 import Stage1.FourGeometries
+import Stage1.TypeTheory.Smoothness
 import Data.Vect
 
 %default total
@@ -21,6 +22,16 @@ data IsGohPrime : (p : Nat) -> Type where
   Prime7  : IsGohPrime 7
   Prime11 : IsGohPrime 11
   Prime13 : IsGohPrime 13
+
+||| Constructive mapping from any constructivist Goh prime to its 13-smooth certificate.
+public export
+gohPrimeWitness : IsGohPrime p -> SmoothWitness CosmicSmoothHorizon p
+gohPrimeWitness Prime2  = prfSmooth2
+gohPrimeWitness Prime3  = Refl
+gohPrimeWitness Prime5  = Refl
+gohPrimeWitness Prime7  = Refl
+gohPrimeWitness Prime11 = Refl
+gohPrimeWitness Prime13 = Refl
 
 ||| Determines the exact algebraic degree of the cyclotomic factor Phi_p(x).
 public export
@@ -58,6 +69,11 @@ public export
 {p : Nat} -> Show (GohFactor p) where
   show (MkGohFactor _ _ geom q role) =
     "GohFactor(" ++ show p ++ " | " ++ show geom ++ " | Q=" ++ show (unwrapBox q) ++ " | " ++ role ++ ")"
+
+||| Projects a dependently typed GohFactor into the canonical CosmicDimension Sigma-pair.
+public export
+0 gohFactorDimension : GohFactor p -> CosmicDimension
+gohFactorDimension (MkGohFactor prf _ _ _ _) = (p ** gohPrimeWitness prf)
 
 ------------------------------------------------------------------------
 -- 3. CANONICAL CONSTRUCTIVE FACTOR INSTANCES ACROSS THE 4 GEOMETRIES

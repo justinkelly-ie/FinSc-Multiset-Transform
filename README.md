@@ -29,9 +29,9 @@
 - **Discrete Active Inference:** Free energy minimization and Markov blanket state transducers over multiset observations.
 - **Stream Transducers:** Mealy/Moore-style state machines consuming and emitting discrete multiset tokens.
 
-### 5. Stratified Universe State (`Stage1.StratifiedState`, `Stage1.SmoothUniverseState`)
-- **Smooth Physical State:** `SmoothUniverseState` certifying at compile time that total cosmic capacity ($V_m + DE + DM$) is smooth under the prime horizon without prime factors exceeding the bound.
-- **Vacuum Seeding:** Strict zero-leakage state seeding (`seedSmoothCosmicVacuum`) conserving physical quanta across cosmic epochs.
+### 5. Stratified Universe State (`Stage1.StratifiedState`, `Stage1.UniverseState`)
+- **Certified Physical State:** `UniverseState` certifying at compile time that total cosmic capacity ($V_m + DE + DM$) is certified under the prime horizon without prime factors exceeding the bound.
+- **Vacuum Seeding:** Strict zero-leakage state seeding (`seedCosmicVacuumCertified`, `seedPrimorialGroundState`) conserving physical quanta across cosmic epochs.
 
 ### 6. 2LTT Staged Specialization & Compile-Time Macro Auditing (`Stage1.Staged.Specializer`, `Stage1.Reflect.InvariantAuditor`)
 - **Binding-Time Partial Evaluation:** Pre-evaluates statically known `MaxelTransform` matrices at compile-time ($U_1$), compiling pushforwards into unrolled, deforested assignments at Level 0 ($U_0$).

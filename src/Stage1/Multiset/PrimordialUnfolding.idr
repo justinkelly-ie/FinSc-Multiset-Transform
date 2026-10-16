@@ -10,6 +10,7 @@ import Stage1.UnixelFraction
 import Stage1.VexelMaxel
 import Stage0.OnSeq.FusedStream
 import Stage1.FourGeometries
+import Stage1.UniverseState
 
 %default total
 
@@ -202,3 +203,10 @@ auditGroundStateFreeEnergyProof =
 public export
 mobiusUnfoldTransition : TriadQuadrance -> CosmicPartition
 mobiusUnfoldTransition (MkTriadQuadrance _ _ _) = canonicalCosmicPartition
+
+||| Certified Möbius Unfolding Transition: Unfolds a saturated chromogeometric triad
+||| directly into the compile-time certified Primorial 210 CosmicUniverseState.
+public export
+mobiusUnfoldCertified : TriadQuadrance -> CosmicUniverseState 27 128 55
+mobiusUnfoldCertified _ = seedPrimorialGroundState
+

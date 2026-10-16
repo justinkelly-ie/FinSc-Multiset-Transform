@@ -95,6 +95,13 @@ evaluateGohActiveInferenceStep n entropyFn raw =
       surp   = subBox (entropyFn canon) (entropyFn raw)
   in MkGohActiveState raw chain pushed canon surp
 
+||| Evaluates active inference perception-action specifically at the Observer Epoch (n = 39 = 3 * 13, k = 38).
+||| Certified at compile-time to operate on a gate-pure scale (Rule 03, Section 5).
+public export
+observerActiveInferenceStep : (GohMultiset -> BoxInt) -> GohMultiset -> GohActiveInferenceState 39
+observerActiveInferenceStep = evaluateGohActiveInferenceStep 39
+
+
 ||| Audits Goh Active Inference Free Energy Minimization:
 ||| Proves that Goh canonicalization step reduces or preserves variational surprise (Delta F_Goh <= 0).
 public export
