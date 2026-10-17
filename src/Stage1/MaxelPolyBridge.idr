@@ -40,7 +40,7 @@ companionMaxel2D c0 c1 =
 public export
 companionMaxelFromPoly : StreamPolynumber -> VM.Maxel
 companionMaxelFromPoly p =
-  let terms = streamPolyToList (limit 5) p
+  let terms = streamPolyToListNat 5 p
       c0 = case find (\(d, _) => d == 0) terms of
              Just (_, w) => w
              Nothing     => intToBoxInt 0
@@ -132,6 +132,24 @@ spreadRecurrenceHylo fuel s =
     iterateFuel Dry _ acc = acc
     iterateFuel (More f) step acc = iterateFuel f step (step acc)
 
+||| Generates the n-th Wildberger Spread S_n(s) using Nat-step bounded Conjugate Hylomorphism.
+public export
+spreadRecurrenceHyloNat : (steps : Nat) -> BoxInt -> BoxInt
+spreadRecurrenceHyloNat steps s =
+  let init = (s, intToBoxInt 0, intToBoxInt 1)
+      res = iterateNat steps (stepSpreadAffine s) init
+  in case res of
+        (sn, _, _) => sn
+  where
+    iterateNat : Nat -> (a -> a) -> a -> a
+    iterateNat Z _ acc = acc
+    iterateNat (S k) step acc = iterateNat k step (step acc)
+
+||| Generates the n-th Wildberger Spread S_n(s) using model-indexed GohFuel.
+public export
+spreadRecurrenceHyloFuelModel : GohFuel cap -> BoxInt -> BoxInt
+spreadRecurrenceHyloFuelModel fuel = spreadRecurrenceHyloNat (gohSteps fuel)
+
 ||| Normalizes a Maxel by consolidating duplicate pixels and removing zero weights
 ||| via canonical single-pass multiset insertion without quadratic list scans.
 public export
@@ -213,10 +231,10 @@ public export
 auditSpreadOrthogonalOscillationProof : Bool
 auditSpreadOrthogonalOscillationProof =
   let s = intToBoxInt 1
-      s1 = spreadRecurrenceHylo (limit 0) s -- initial S_1 = 1
-      s2 = spreadRecurrenceHylo (limit 1) s -- S_2 = 0
-      s3 = spreadRecurrenceHylo (limit 2) s -- S_3 = 1
-      s4 = spreadRecurrenceHylo (limit 3) s -- S_4 = 0
+      s1 = spreadRecurrenceHyloNat 0 s -- initial S_1 = 1
+      s2 = spreadRecurrenceHyloNat 1 s -- S_2 = 0
+      s3 = spreadRecurrenceHyloNat 2 s -- S_3 = 1
+      s4 = spreadRecurrenceHyloNat 3 s -- S_4 = 0
   in boxEq s1 (intToBoxInt 1) &&
      boxEq s2 (intToBoxInt 0) &&
      boxEq s3 (intToBoxInt 1) &&
@@ -264,19 +282,18 @@ auditFastSpreadEquivalenceProof : Bool
 auditFastSpreadEquivalenceProof =
   let sOrth = intToBoxInt 1
       sHyp = intToBoxInt 2
-      fuel = limit 10
-      f1 = fastSpreadPower fuel 1 sOrth
-      f2 = fastSpreadPower fuel 2 sOrth
-      f3 = fastSpreadPower fuel 3 sOrth
-      f4 = fastSpreadPower fuel 4 sOrth
-      h1 = spreadRecurrenceHylo (limit 0) sOrth
-      h2 = spreadRecurrenceHylo (limit 1) sOrth
-      h3 = spreadRecurrenceHylo (limit 2) sOrth
-      h4 = spreadRecurrenceHylo (limit 3) sOrth
-      hf1 = fastSpreadPower fuel 1 sHyp
-      hf2 = fastSpreadPower fuel 2 sHyp
-      hh1 = spreadRecurrenceHylo (limit 0) sHyp
-      hh2 = spreadRecurrenceHylo (limit 1) sHyp
+      f1 = fastSpreadPowerNat 10 1 sOrth
+      f2 = fastSpreadPowerNat 10 2 sOrth
+      f3 = fastSpreadPowerNat 10 3 sOrth
+      f4 = fastSpreadPowerNat 10 4 sOrth
+      h1 = spreadRecurrenceHyloNat 0 sOrth
+      h2 = spreadRecurrenceHyloNat 1 sOrth
+      h3 = spreadRecurrenceHyloNat 2 sOrth
+      h4 = spreadRecurrenceHyloNat 3 sOrth
+      hf1 = fastSpreadPowerNat 10 1 sHyp
+      hf2 = fastSpreadPowerNat 10 2 sHyp
+      hh1 = spreadRecurrenceHyloNat 0 sHyp
+      hh2 = spreadRecurrenceHyloNat 1 sHyp
   in (f1 == h1) && (f2 == h2) && (f3 == h3) && (f4 == h4) &&
      (hf1 == hh1) && (hf2 == hh2)
 
@@ -290,13 +307,13 @@ auditFastSpreadPowerNatEquivalenceProof =
       f2 = fastSpreadPowerNat 10 2 sOrth
       f3 = fastSpreadPowerNat 10 3 sOrth
       f4 = fastSpreadPowerNat 10 4 sOrth
-      h1 = spreadRecurrenceHylo (limit 0) sOrth
-      h2 = spreadRecurrenceHylo (limit 1) sOrth
-      h3 = spreadRecurrenceHylo (limit 2) sOrth
-      h4 = spreadRecurrenceHylo (limit 3) sOrth
+      h1 = spreadRecurrenceHyloNat 0 sOrth
+      h2 = spreadRecurrenceHyloNat 1 sOrth
+      h3 = spreadRecurrenceHyloNat 2 sOrth
+      h4 = spreadRecurrenceHyloNat 3 sOrth
       hf1 = fastSpreadPowerNat 10 1 sHyp
       hf2 = fastSpreadPowerNat 10 2 sHyp
-      hh1 = spreadRecurrenceHylo (limit 0) sHyp
-      hh2 = spreadRecurrenceHylo (limit 1) sHyp
+      hh1 = spreadRecurrenceHyloNat 0 sHyp
+      hh2 = spreadRecurrenceHyloNat 1 sHyp
   in (f1 == h1) && (f2 == h2) && (f3 == h3) && (f4 == h4) &&
      (hf1 == hh1) && (hf2 == hh2)
