@@ -15,3 +15,9 @@ public export
 0 prfTwoPlusTwoArithmeticFixedPoint :
   (gohAddNat 2 2 == 4) && (gohMulNat 2 2 == 4) = True
 prfTwoPlusTwoArithmeticFixedPoint = Refl
+
+||| Certified dependent dyadic geometry fixed point witness:
+public export
+0 prfDyadicGeometryFixedPointCert : DyadicGeometryFixedPoint
+prfDyadicGeometryFixedPointCert = dyadicGeometryFixedPoint
+
