@@ -10,6 +10,7 @@ import Stage1.TypeTheory.Smoothness
 import Stage1.TypeTheory.TwoLevel
 import Stage1.TypeTheory.Staging
 import Stage1.Goh.Combinator
+import Stage1.MaxelPolyBridge
 
 %default total
 
@@ -156,5 +157,14 @@ public export
 %macro
 auditDyadicGeometryFixedPointMacro : Elab (Stage1.Reflect.InvariantAuditor.auditDyadicGeometryFixedPointProof = True)
 auditDyadicGeometryFixedPointMacro = pure Refl
+
+||| Pure verification of the Support Commutation Theorem (Goh Factor Companion Support):
+||| Verifies that the 2D companion Maxel support size matches the predicted values 1, 3, 7.
+public export
+auditGohMaxelSupportCommutationProof : Bool
+auditGohMaxelSupportCommutationProof =
+  Stage1.MaxelPolyBridge.auditGohMaxelSupportCommutationProof
+
+
 
 

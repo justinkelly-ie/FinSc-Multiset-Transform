@@ -8,6 +8,7 @@ import Stage0.StreamPolynumber
 import Stage1.ConjugateHylo
 import Stage1.VexelMaxel as VM
 import Stage1.VexelStream as VS
+import Stage1.Goh.Factor
 import Data.Fuel
 import Data.List
 import Data.Vect
@@ -72,6 +73,30 @@ companionMaxelND (S (S k)) coeffs =
     filterMap f (x :: xs) = case f x of
                               Just y => y :: filterMap f xs
                               Nothing => filterMap f xs
+
+||| Looks up the coefficient for a specific degree in an unfolded term list.
+public export
+lookupCoeffDeg : Nat -> List (Nat, BoxInt) -> BoxInt
+lookupCoeffDeg target terms =
+  case find (\(d, _) => d == target) terms of
+    Just (_, w) => w
+    Nothing     => intToBoxInt 0
+
+||| Extracts the first deg coefficients [c0, c1, ..., c_{deg-1}] as a Vect.
+public export
+extractCoeffsVect : (deg : Nat) -> (idx : Nat) -> List (Nat, BoxInt) -> Vect deg BoxInt
+extractCoeffsVect Z _ _ = []
+extractCoeffsVect (S k) idx terms =
+  lookupCoeffDeg idx terms :: extractCoeffsVect k (S idx) terms
+
+||| Generalized natural transformation eta from a degree-d StreamPolynumber to its d x d companion Maxel.
+||| Extracts [c0, c1, ..., c_{d-1}] from the sparse stream and builds companionMaxelND.
+public export
+companionMaxelFromPolyDeg : (deg : Nat) -> StreamPolynumber -> VM.Maxel
+companionMaxelFromPolyDeg deg p =
+  let terms = streamPolyToListNat (S deg) p
+      coeffs = extractCoeffsVect deg 0 terms
+  in companionMaxelND deg coeffs
 
 ------------------------------------------------------------------------
 -- 2. WILDBERGER MULTIPLE SPREAD RECURRENCE TRANSFER MAXEL
@@ -317,3 +342,21 @@ auditFastSpreadPowerNatEquivalenceProof =
       hh2 = spreadRecurrenceHyloNat 1 sHyp
   in (f1 == h1) && (f2 == h2) && (f3 == h3) && (f4 == h4) &&
      (hf1 == hh1) && (hf2 == hh2)
+
+||| Verifies the Support Commutation Theorem across irreducible prime factors:
+||| For P = Factor2, Factor3, Factor5, the 2D companion Maxel support size
+||| strictly matches the predicted values 1, 3, 7.
+public export
+auditGohMaxelSupportCommutationProof : Bool
+auditGohMaxelSupportCommutationProof =
+  let p2 = gohFactorToStreamPoly Factor2
+      p3 = gohFactorToStreamPoly Factor3
+      p5 = gohFactorToStreamPoly Factor5
+      m2 = companionMaxelFromPolyDeg 1 p2
+      m3 = companionMaxelFromPolyDeg 2 p3
+      m5 = companionMaxelFromPolyDeg 4 p5
+      s2 = length (VM.supportMaxel m2)
+      s3 = length (VM.supportMaxel m3)
+      s5 = length (VM.supportMaxel m5)
+  in (s2 == 1) && (s3 == 3) && (s5 == 7)
+

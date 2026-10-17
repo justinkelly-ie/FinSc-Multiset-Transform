@@ -13,6 +13,7 @@ import Stage0.WitnessLedger
 import Stage0.StructuralFuel
 import Stage1.UnixelFraction
 import Stage0.OnSeq.FusedStream
+import Stage0.StreamPolynumber
 import Stage1.TypeTheory.Staging
 
 %default total
@@ -322,6 +323,39 @@ fusedEvalGohMultiset bag s =
                    in mulUnixelFraction acc factorVal)
                 (fracInt 1)
                 (streamGohMultiset bag)
+
+--------------------------------------------------------------------------------
+-- 2A. DEFORESTED STREAM POLYNUMBER FUNCTORS (TREE CAUCHY FOLDING)
+--------------------------------------------------------------------------------
+
+||| Converts a GohAuxiliary factor directly into a deforested 1D StreamPolynumber.
+||| Emits strictly non-zero terms in O(1) auxiliary registers.
+public export
+gohAuxiliaryToStreamPoly : {deg : Nat} -> GohAuxiliary deg -> StreamPolynumber
+gohAuxiliaryToStreamPoly (Phi coeffs) =
+  filterMapStream (\(i, frac) =>
+    let c = frac.num
+    in if unwrapBox c /= 0 then Just (i, c) else Nothing)
+    (streamVectWithIndex 0 coeffs)
+
+||| Raises a 1D StreamPolynumber to a natural power via repeated Cauchy convolution.
+public export
+streamPolyPowerCauchy : StreamPolynumber -> Nat -> StreamPolynumber
+streamPolyPowerCauchy _ Z = streamPolyConstant (intToBoxInt 1)
+streamPolyPowerCauchy p (S Z) = p
+streamPolyPowerCauchy p (S k) = streamPolyCauchyMul p (streamPolyPowerCauchy p k)
+
+||| Folds an entire GohMultiset factorization tree into a single deforested 1D StreamPolynumber
+||| via algebraic Cauchy multiplication (streamPolyCauchyMul) over monomial terms.
+public export
+gohMultisetToStreamPoly : GohMultiset -> StreamPolynumber
+gohMultisetToStreamPoly EmptyBag = streamPolyConstant (intToBoxInt 1)
+gohMultisetToStreamPoly (AddFactor factor rest) =
+  streamPolyCauchyMul (gohAuxiliaryToStreamPoly factor) (gohMultisetToStreamPoly rest)
+gohMultisetToStreamPoly (AddFactorM factor m rest) =
+  let n = boxNatToNat m
+      powP = streamPolyPowerCauchy (gohAuxiliaryToStreamPoly factor) n
+  in streamPolyCauchyMul powP (gohMultisetToStreamPoly rest)
 
 --------------------------------------------------------------------------------
 -- 3. FRACTIONAL MEASUREMENT RANGE & NESTED MULTISET STREAM RESOLUTION
