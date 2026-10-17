@@ -10,6 +10,7 @@ import Decidable.Equality
 import Stage0.BoxInt
 import public Stage0.BoxNat
 import Stage0.WitnessLedger
+import Stage0.StructuralFuel
 import Stage1.UnixelFraction
 import Stage0.OnSeq.FusedStream
 import Stage1.TypeTheory.Staging
@@ -345,6 +346,35 @@ commonPathPrefixLength _ [] = 0
 commonPathPrefixLength (b1 :: r1) (b2 :: r2) =
   if b1 == b2 then S (commonPathPrefixLength r1 r2) else 0
 
+||| Combined constructive state capacity of a FractionalRange: cap(low) + cap(high).
+public export
+%inline
+rangeCapacity : FractionalRange -> Nat
+rangeCapacity (MkFractionalRange low high) = fractionCapacity low + fractionCapacity high
+
+||| Model-indexed Goh fuel derived from the FractionalRange's capacity.
+public export
+%inline
+rangeGohFuel : (range : FractionalRange) -> GohFuel (rangeCapacity range)
+rangeGohFuel range = gohFuelForCapacity (rangeCapacity range)
+
+||| Computes the number of nested multiset tree levels (Stern-Brocot common prefix depth)
+||| required to resolve a physical measurement range [lowBound, highBound] with model-indexed GohFuel.
+public export
+rangeNestedMultisetDepthFuelModel : GohFuel cap -> FractionalRange -> Nat
+rangeNestedMultisetDepthFuelModel fuel (MkFractionalRange low high) =
+  let pathLow  = toSternBrocotPath (gohSteps fuel) low
+      pathHigh = toSternBrocotPath (gohSteps fuel) high
+  in commonPathPrefixLength pathLow pathHigh
+
+||| Computes range nested multiset depth using canonical structural Goh fuel.
+public export
+rangeNestedMultisetDepthGoh : FractionalRange -> Nat
+rangeNestedMultisetDepthGoh (MkFractionalRange low high) =
+  let pathLow  = toSternBrocotPathGoh low
+      pathHigh = toSternBrocotPathGoh high
+  in commonPathPrefixLength pathLow pathHigh
+
 ||| Computes the number of nested multiset tree levels (Stern-Brocot common prefix depth)
 ||| required to resolve a physical measurement range [lowBound, highBound].
 public export
@@ -353,6 +383,34 @@ rangeNestedMultisetDepth fuel (MkFractionalRange low high) =
   let pathLow  = toSternBrocotPath fuel low
       pathHigh = toSternBrocotPath fuel high
   in commonPathPrefixLength pathLow pathHigh
+
+||| Decomposes a physical FractionalRange into its nested GohMultiset factor ledger with model-indexed GohFuel.
+public export
+factorizeFractionalRangeFuelModel : GohFuel cap -> FractionalRange -> GohMultiset
+factorizeFractionalRangeFuelModel fuel range =
+  let depth = rangeNestedMultisetDepthFuelModel fuel range
+  in buildLedger depth
+  where
+    buildLedger : Nat -> GohMultiset
+    buildLedger Z = EmptyBag
+    buildLedger (S k) =
+      let kFrac = mkUnixelFraction (natToBoxInt k) 1
+          deg1Poly = Phi [kFrac, unitUnixelFraction]
+      in AddFactor deg1Poly (buildLedger k)
+
+||| Decomposes a physical FractionalRange into its nested GohMultiset factor ledger using canonical structural Goh fuel.
+public export
+factorizeFractionalRangeGoh : FractionalRange -> GohMultiset
+factorizeFractionalRangeGoh range =
+  let depth = rangeNestedMultisetDepthGoh range
+  in buildLedger depth
+  where
+    buildLedger : Nat -> GohMultiset
+    buildLedger Z = EmptyBag
+    buildLedger (S k) =
+      let kFrac = mkUnixelFraction (natToBoxInt k) 1
+          deg1Poly = Phi [kFrac, unitUnixelFraction]
+      in AddFactor deg1Poly (buildLedger k)
 
 ||| Decomposes a physical FractionalRange into its nested GohMultiset factor ledger,
 ||| constructing degree-1 GohAuxiliary factors for each resolved Stern-Brocot tree level.
