@@ -630,6 +630,12 @@ spreadRecurrenceStream s =
 -- 15. STREAMING SCALE ADJUNCTION AUDIT WITNESS
 ------------------------------------------------------------------------
 
+||| Predicate auditing that token weights are preserved under scale adjunction.
+public export
+adjunctionAuditPred : Bool -> (Nat, BoxInt) -> Bool
+adjunctionAuditPred acc (idx, w) =
+  acc && ((idx == 0 && unwrapBox w == 42) || (idx == 1 && unwrapBox w == 99))
+
 ||| Audit witness verifying that StreamingScaleAdjunction round-trip preserves token weights.
 public export
 auditScaleAdjunctionProof : Bool
@@ -644,8 +650,7 @@ auditScaleAdjunctionProof =
       inputStrm = FS.stream [ (0, intToBoxInt 42), (1, intToBoxInt 99) ]
       pushed = adj.streamPushforward inputStrm
       pulled = adj.streamPullback pushed
-      res = FS.foldStreamNat 2 (\acc, (idx, w) => acc && ((idx == 0 && unwrapBox w == 42) || (idx == 1 && unwrapBox w == 99))) True pulled
-  in res
+  in FS.foldStreamNat 2 adjunctionAuditPred True pulled
 
 ------------------------------------------------------------------------
 -- 16. COINDUCTIVE MULTISET SHEAVES & SCALE ADJUNCTION FIBERS
@@ -671,6 +676,12 @@ makeAdjunctionSheaf cell sectionFn adj =
     (\u, v => adj.streamPullback . adj.streamPushforward)
     (\u, v => True)
 
+||| Predicate auditing that sheaf restriction preserves local token weights.
+public export
+sheafCommutationAuditPred : Bool -> (Nat, BoxInt) -> Bool
+sheafCommutationAuditPred acc (idx, w) =
+  acc && ((idx == 0 && unwrapBox w == 10) || (idx == 1 && unwrapBox w == 20))
+
 ||| Audit witness verifying that CoinductiveMultisetSheaf local restriction commutes with stream identity:
 public export
 auditSheafCommutationProof : Bool
@@ -682,8 +693,7 @@ auditSheafCommutationProof =
       sheaf = makeAdjunctionSheaf Nat (\n => FS.stream [ (0, intToBoxInt 10), (1, intToBoxInt 20) ]) adj
       sec = sheaf.localSection 0
       restr = sheaf.restriction 0 1 sec
-      res = FS.foldStreamNat 2 (\acc, (idx, w) => acc && ((idx == 0 && unwrapBox w == 10) || (idx == 1 && unwrapBox w == 20))) True restr
-  in res
+  in FS.foldStreamNat 2 sheafCommutationAuditPred True restr
 
 
 
