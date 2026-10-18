@@ -4,6 +4,7 @@ import Stage0.BoxInt
 import Stage1.VexelMaxel
 import Stage1.TypeTheory.Staging
 import Stage1.TypeTheory.TwoLevel
+import Data.Vect
 
 %default total
 
@@ -77,3 +78,39 @@ public export
 0 prfStagedTotalMaxelWeight : (m : Maxel) ->
                               stagedTotalMaxelWeight (quote m) = totalMaxelWeight m
 prfStagedTotalMaxelWeight _ = Refl
+
+------------------------------------------------------------------------
+-- 2LTT STAGED DIMENSION-INDEXED MATRIX ENGINE
+------------------------------------------------------------------------
+
+||| 2LTT Staged N x N Matrix Multiplication:
+||| Evaluates dimension-indexed matrix multiplication at compile time (Stage 1)
+||| via deforested dot products and splices to Stage 0.
+public export
+stagedMatrixMul : Num a => {n : Nat} -> Lift (Vect n (Vect n a)) -> Lift (Vect n (Vect n a)) -> Vect n (Vect n a)
+stagedMatrixMul matA matB = stagedUnrollMatMul (splice matA) (splice matB)
+
+||| 2LTT Staged N x N Matrix-Vector Contraction:
+public export
+stagedMatrixVec : Num a => {n : Nat} -> Lift (Vect n (Vect n a)) -> Lift (Vect n a) -> Vect n a
+stagedMatrixVec mat v = stagedUnrollMatVec (splice mat) (splice v)
+
+||| 2LTT Staged N x N Matrix Power:
+public export
+stagedMatrixPower : Num a => (fuel : Nat) -> {n : Nat} -> Lift (Vect n (Vect n a)) -> Nat -> Vect n (Vect n a)
+stagedMatrixPower fuel mat exp = stagedFastMatPower fuel (splice mat) exp
+
+||| Converts a 2x2 matrix of BoxInt into a Maxel representation.
+public export
+vect2x2ToMaxel : Vect 2 (Vect 2 BoxInt) -> Maxel
+vect2x2ToMaxel [[m11, m12], [m21, m22]] =
+  let p11 = (MkPixel 1 1, m11)
+      p12 = (MkPixel 1 2, m12)
+      p21 = (MkPixel 2 1, m21)
+      p22 = (MkPixel 2 2, m22)
+  in canonicalizeMaxel (MkMaxel [p11, p12, p21, p22])
+
+||| Staged 2x2 companion Maxel multiplication evaluating straight-line scalar dot products:
+public export
+stagedCompanion2x2Mul : Lift (Vect 2 (Vect 2 BoxInt)) -> Lift (Vect 2 (Vect 2 BoxInt)) -> Maxel
+stagedCompanion2x2Mul mA mB = vect2x2ToMaxel (stagedMatrixMul mA mB)

@@ -79,7 +79,7 @@ interface TwoLevelConjugateAdjunction (0 l : Type -> Type) (0 r : Type -> Type) 
   0 conjugateNaturalityProof : {0 a, b : Type} -> (0 f : a -> b) -> True = True
 
   ||| QTT 0 Erased Proof Witness: Conjugate multiset path naturality across 2LTT subfibrations.
-  0 conjugateMultisetPathNaturality : (Eq a, Neg c, Num c, Eq c) => {0 m1, m2 : Multiset c a} -> (0 p : MultisetPathIso m1 m2) -> True = True
+  0 conjugateMultisetPathNaturality : {0 m1, m2 : Multiset c a} -> (0 p : MultisetPathIso m1 m2) -> True = True
 
 ||| Canonical 2LTT Two-Level Conjugate Duality alias
 public export

@@ -220,4 +220,20 @@ public export
                            (splice (compilePullbackCode (quote t))) m = applyPullback t m
 prfCompilePullbackEquiv _ _ = Refl
 
+------------------------------------------------------------------------
+-- 6. 2LTT STAGED BOUNDARY INTEGRATION
+------------------------------------------------------------------------
 
+||| Staged Boundary Transducer for Pushforward:
+||| Lifts a pushforward computation across the 2LTT boundary from StrictLevel input
+||| to HomotopyLevel output.
+public export
+boundaryPushforward : (Eq a, Eq b) => MaxelTransform a b -> StagedBoundary (Box a) (Box b)
+boundaryPushforward t = MkBoundary (\(MkStrict m) => MkHomotopy (applyPushforward t m))
+
+||| Staged Boundary Transducer for Pullback:
+||| Lifts a pullback computation across the 2LTT boundary from StrictLevel macro-state
+||| to HomotopyLevel micro-state.
+public export
+boundaryPullback : (Eq a, Eq b) => MaxelTransform a b -> StagedBoundary (Box b) (Box a)
+boundaryPullback t = MkBoundary (\(MkStrict m) => MkHomotopy (applyPullback t m))
