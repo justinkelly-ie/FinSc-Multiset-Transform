@@ -186,26 +186,26 @@ typedPullback (MkTypedMaxelTransform frac box) macroState =
 ||| Direct pushforward action of a MaxelTransform on a 1D Vexel vector without intermediate list conversion.
 public export
 actTransformVexel : MaxelTransform Unixel Unixel -> Vexel -> Vexel
-actTransformVexel (MkMaxelTransform _ _ (MkBox tPairs)) (MkVexel sings) =
+actTransformVexel (MkMaxelTransform _ _ (MkBox tPairs)) v =
   let pushedBox = foldl (\acc, ((uSrc, uTgt), wT) =>
-                    let wS = lookupUnixel uSrc (MkVexel sings)
+                    let wS = lookupUnixel uSrc v
                     in insertBoxFast uTgt (mulBox wS wT) acc) emptyBox tPairs
-  in MkVexel (items (consolidateBox pushedBox))
+  in mkVexel (items (consolidateBox pushedBox))
 
 ||| Direct pushforward action of a MaxelTransform on a 2D Maxel matrix.
 public export
 actTransformMaxel : MaxelTransform Pixel Pixel -> Stage1.VexelMaxel.Maxel -> Stage1.VexelMaxel.Maxel
-actTransformMaxel (MkMaxelTransform _ _ (MkBox tPairs)) (MkMaxel pxs) =
+actTransformMaxel (MkMaxelTransform _ _ (MkBox tPairs)) m =
   let pushedBox = foldl (\acc, ((pSrc, pTgt), wT) =>
-                    let wM = lookupPixel pSrc (MkMaxel pxs)
+                    let wM = lookupPixel pSrc m
                     in insertBoxFast pTgt (mulBox wM wT) acc) emptyBox tPairs
-  in MkMaxel (items (consolidateBox pushedBox))
+  in mkMaxel (items (consolidateBox pushedBox))
 
 ||| Converts a 2D Maxel matrix directly into a MaxelTransform without passing through raw List pairs.
 public export
 maxelToTransform : MetricSector -> UnixelFraction -> Stage1.VexelMaxel.Maxel -> MaxelTransform Unixel Unixel
-maxelToTransform sec frac (MkMaxel pxs) =
-  let pairs = map (\(MkPixel i j, w) => ((MkUnixel i, MkUnixel j), w)) pxs
+maxelToTransform sec frac m =
+  let pairs = map (\(MkPixel i j, w) => ((MkUnixel i, MkUnixel j), w)) (maxelPixels m)
   in MkMaxelTransform sec frac (MkBox pairs)
 
 ||| Converts a MaxelTransform back into a canonical 2D Maxel matrix.
@@ -213,7 +213,7 @@ public export
 transformToMaxel : MaxelTransform Unixel Unixel -> Stage1.VexelMaxel.Maxel
 transformToMaxel (MkMaxelTransform _ _ (MkBox tPairs)) =
   let pxs = map (\((MkUnixel i, MkUnixel j), w) => (MkPixel i j, w)) tPairs
-  in canonicalizeMaxel (MkMaxel pxs)
+  in mkMaxel pxs
 
 ------------------------------------------------------------------------
 -- 5. MAXEL PIXEL FUSION COMPOSITION

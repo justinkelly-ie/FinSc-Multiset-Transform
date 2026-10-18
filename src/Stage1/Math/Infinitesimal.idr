@@ -3,6 +3,7 @@ module Stage1.Math.Infinitesimal
 import Stage0.BoxInt
 import Stage0.WitnessLedger
 import Stage1.VexelMaxel
+import Stage1.MultisetTree
 import Stage1.Polynumber
 
 %default total
@@ -15,7 +16,7 @@ import Stage1.Polynumber
 ||| Defined as the single basis Pixel [1, 2] with unit weight.
 public export
 epsilon : Maxel
-epsilon = MkMaxel [(MkPixel 1 2, intToBoxInt 1)]
+epsilon = MkMaxelTree (BoxNode 1 BoxLeaf (MkPixel 1 2) (intToBoxInt 1) BoxLeaf)
 
 ||| Multiplication rule for the infinitesimal token: ε * ε = 0.
 ||| Computed purely via pixel multiset contraction [1, 2] * [1, 2] => [].
@@ -32,10 +33,10 @@ mulEpsilon e1 e2 = mulMaxel e1 e2
 public export
 dualNumber : (realPart : BoxInt) -> (epsPart : BoxInt) -> Maxel
 dualNumber r i =
-  MkMaxel [ (MkPixel 1 1, r)
-          , (MkPixel 2 2, r)
-          , (MkPixel 1 2, i)
-          ]
+  MkMaxelTree (BoxNode 2
+                 (BoxNode 1 BoxLeaf (MkPixel 1 1) r BoxLeaf)
+                 (MkPixel 1 2) i
+                 (BoxNode 1 BoxLeaf (MkPixel 2 2) r BoxLeaf))
 
 ||| Extracts the real scalar part of a Dual Number Maxel.
 public export
@@ -105,7 +106,7 @@ autoDiffAt p a =
 ||| Extracts term count of a Maxel multiset.
 public export
 maxelTermsCount : Maxel -> Nat
-maxelTermsCount (MkMaxel ts) = List.length ts
+maxelTermsCount (MkMaxelTree t) = boxTreeSize t
 
 ||| QTT 0 erased proof witness auditing exact Dual Number 3-term carrier structure (real, real-diagonal, eps-tangent).
 public export

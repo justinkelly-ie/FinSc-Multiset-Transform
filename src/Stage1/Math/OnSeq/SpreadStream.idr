@@ -140,12 +140,12 @@ public export
 classifySpreadStreamSector : GohMultiset -> FundamentalGeometry
 classifySpreadStreamSector EmptyBag = SubstrateGeom
 classifySpreadStreamSector (AddFactorM {deg} _ _ _) =
-  if deg `mod` 3 == Z then EllipticGeom
-  else if deg `mod` 2 == Z then HyperbolicGeom
+  if snd (natDivMod deg 3) == 0 then EllipticGeom
+  else if not (snd (natHalfAndOdd deg)) then HyperbolicGeom
   else ParabolicGeom
 classifySpreadStreamSector (AddFactor {deg} _ _) =
-  if deg `mod` 3 == Z then EllipticGeom
-  else if deg `mod` 2 == Z then HyperbolicGeom
+  if snd (natDivMod deg 3) == 0 then EllipticGeom
+  else if not (snd (natHalfAndOdd deg)) then HyperbolicGeom
   else ParabolicGeom
 
 ||| Evaluates an allocation-free deforested Goh spread polynomial stream generator under 
@@ -243,14 +243,14 @@ chromogeometricBudgetExhaustion bags = foldl step (Z, Z, Z) bags
     step (b, r, g) (AddFactorM {deg} _ m rest) =
       let degWeight = totient deg * boxNatToNat m
           (b', r', g') =
-            if deg `mod` 3 == Z then (b + degWeight, r, g)
-            else if deg `mod` 2 == Z then (b, r + degWeight, g)
+            if snd (natDivMod deg 3) == 0 then (b + degWeight, r, g)
+            else if not (snd (natHalfAndOdd deg)) then (b, r + degWeight, g)
             else (b, r, g + degWeight)
       in step (b', r', g') rest
     step (b, r, g) (AddFactor {deg} _ rest) =
       let (b', r', g') =
-            if deg `mod` 3 == Z then (b + totient deg, r, g)
-            else if deg `mod` 2 == Z then (b, r + totient deg, g)
+            if snd (natDivMod deg 3) == 0 then (b + totient deg, r, g)
+            else if not (snd (natHalfAndOdd deg)) then (b, r + totient deg, g)
             else (b, r, g + totient deg)
       in step (b', r', g') rest
 
@@ -307,14 +307,14 @@ computeChromogeometricBudgetDeforested strm =
     step (b, r, g) (AddFactorM {deg} _ m rest) =
       let degWeight = totient deg * boxNatToNat m
           (b', r', g') =
-            if deg `mod` 3 == Z then (b + degWeight, r, g)
-            else if deg `mod` 2 == Z then (b, r + degWeight, g)
+            if snd (natDivMod deg 3) == 0 then (b + degWeight, r, g)
+            else if not (snd (natHalfAndOdd deg)) then (b, r + degWeight, g)
             else (b, r, g + degWeight)
       in step (b', r', g') rest
     step (b, r, g) (AddFactor {deg} _ rest) =
       let (b', r', g') =
-            if deg `mod` 3 == Z then (b + totient deg, r, g)
-            else if deg `mod` 2 == Z then (b, r + totient deg, g)
+            if snd (natDivMod deg 3) == 0 then (b + totient deg, r, g)
+            else if not (snd (natHalfAndOdd deg)) then (b, r + totient deg, g)
             else (b, r, g + totient deg)
       in step (b', r', g') rest
 

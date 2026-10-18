@@ -15,6 +15,7 @@ import Stage1.Goh
 import Stage1.TypeTheory.MultisetLevel
 import Stage1.ScalePipeline
 import Data.Vect
+import Stage1.MultisetTree
 import Stage0.OnSeq.FusedStream
 import Data.Fuel
 
@@ -139,8 +140,8 @@ multisetToMacroNode _            = PassiveGridNode
 ||| Pure Multiset Zoom Out (f_*) operator coarse-graining a multiset vexel into macro grid nodes.
 export %noinline
 zoomOutMultisetGrid : Vexel -> Multiset BoxInt MacroGridNode
-zoomOutMultisetGrid (MkVexel unixelBag) =
-  foldl (\acc, (u, w) => insertItem (multisetToMacroNode u) w acc) ZeroM unixelBag
+zoomOutMultisetGrid v =
+  foldBoxTreeL (\acc, (u, w) => insertItem (multisetToMacroNode u) w acc) ZeroM (vexelToBoxTree v)
 
 ||| Audits multiset grid coarse-graining invariants.
 export

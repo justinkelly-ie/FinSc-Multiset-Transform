@@ -217,9 +217,9 @@ fastMaxelPower (More f) exp dim m =
     loop Dry _ _ acc = acc
     loop (More _) Z _ acc = acc
     loop (More f') e base acc =
-      let acc' = if (e `mod` 2 == 1) then compressMaxel (VM.mulMaxel acc base) else acc
+      let (e', isOdd) = natHalfAndOdd e
+          acc' = if isOdd then compressMaxel (VM.mulMaxel acc base) else acc
           base' = compressMaxel (VM.mulMaxel base base)
-          e' = e `div` 2
       in loop f' e' base' acc'
 
 ||| Evaluates the n-th Wildberger multiple spread S_n in O(log n) steps via companion Maxel repeated squaring:
@@ -249,7 +249,7 @@ auditCompanionSupportProof : Bool
 auditCompanionSupportProof =
   let cMaxel = companionMaxel2D (intToBoxInt 2) (intToBoxInt 3)
       supp = VM.supportMaxel cMaxel
-  in supp == [VM.MkPixel 2 1, VM.MkPixel 1 2, VM.MkPixel 2 2]
+  in supp == [VM.MkPixel 1 2, VM.MkPixel 2 1, VM.MkPixel 2 2]
 
 ||| Verifies dynamic support pruning: for s = 0, edge [1, 3] drops from the support!
 ||| For s = 1, edge [1, 3] is present with weight 2.
@@ -294,10 +294,9 @@ fastMaxelPowerNat (S f) exp dim m =
     loop Z _ _ acc = acc
     loop (S _) Z _ acc = acc
     loop (S f') e base acc =
-      let isOdd = (cast {to = Integer} e `mod` 2) == 1
+      let (e', isOdd) = natHalfAndOdd e
           acc' = if isOdd then compressMaxel (VM.mulMaxel acc base) else acc
           base' = compressMaxel (VM.mulMaxel base base)
-          e' = half e
       in loop f' e' base' acc'
 
 ||| Evaluates the n-th Wildberger multiple spread S_n in O(log n) steps with Nat fuel:
