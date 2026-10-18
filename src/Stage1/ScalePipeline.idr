@@ -472,5 +472,5 @@ auditMultiScaleHornerStreamProof : Bool
 auditMultiScaleHornerStreamProof =
   let testCoeffs = [intToBoxInt 1, intToBoxInt 2, intToBoxInt 1]
       strm = stream137ScaleHorner testCoeffs
-      first3 = foldStreamNat 3 (\acc, (k, v) => (k, unwrapBox v) :: acc) (the (List (Nat, Integer)) []) strm
+      first3 = foldStreamNat 3 (\acc, (k, v) => (k, v) :: acc) (the (List (Nat, BoxInt)) []) strm
   in length first3 == 3

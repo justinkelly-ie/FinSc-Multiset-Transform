@@ -112,13 +112,13 @@ unrollPairs : Eq a => Eq b =>
 unrollPairs [] _ = emptyBox
 unrollPairs [((a, b), wT)] state =
   let wM = lookupBox a state
-  in if unwrapBox wM == 0
+  in if boxIsZero wM
        then emptyBox
        else insertBoxFast b (mulBox wM wT) emptyBox
 unrollPairs (((a, b), wT) :: rest) state =
   let wM = lookupBox a state
       restBox = unrollPairs rest state
-  in if unwrapBox wM == 0
+  in if boxIsZero wM
        then restBox
        else insertBoxFast b (mulBox wM wT) restBox
 

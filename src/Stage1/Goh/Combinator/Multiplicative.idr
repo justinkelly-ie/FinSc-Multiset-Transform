@@ -67,7 +67,7 @@ prfPrimorial210Factorization = Refl
 
 ||| BoxInt representation matches Nat index factorization.
 public export
-0 prfBoxMulMatchesNat : unwrapBox (gohMulBox (intToBoxInt 3) (intToBoxInt 13)) = 39
+0 prfBoxMulMatchesNat : gohMulBox (intToBoxInt 3) (intToBoxInt 13) = intToBoxInt 39
 prfBoxMulMatchesNat = Refl
 
 ||| Validated 13-smooth composite dimension of the Observer Epoch (3 ⊗ 13 = 39).

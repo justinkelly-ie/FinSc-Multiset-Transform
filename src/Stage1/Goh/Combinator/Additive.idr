@@ -74,7 +74,7 @@ prfWatsonCrickBondSum = Refl
 
 ||| Definitional proof that BoxInt combinator matches Nat combinator:
 public export
-0 prfBoxAddMatchesNat : unwrapBox (gohAddBox (intToBoxInt 2) (intToBoxInt 3)) = 5
+0 prfBoxAddMatchesNat : gohAddBox (intToBoxInt 2) (intToBoxInt 3) = intToBoxInt 5
 prfBoxAddMatchesNat = Refl
 
 ------------------------------------------------------------------------
@@ -146,18 +146,18 @@ streamFourGeometries = gohAppendStream streamManifestGeometries streamSpectralGe
 
 ||| Invariant witness: Total multiset mass of manifest geometries is 2.
 public export
-0 prfManifestMultisetMassIs2 : unwrapBox (totalMassBox ManifestGeometryMultiset) = 2
+0 prfManifestMultisetMassIs2 : totalMassBox ManifestGeometryMultiset = intToBoxInt 2
 prfManifestMultisetMassIs2 = Refl
 
 ||| Invariant witness: Total multiset mass of spectral geometries is 2.
 public export
-0 prfSpectralMultisetMassIs2 : unwrapBox (totalMassBox SpectralGeometryMultiset) = 2
+0 prfSpectralMultisetMassIs2 : totalMassBox SpectralGeometryMultiset = intToBoxInt 2
 prfSpectralMultisetMassIs2 = Refl
 
 ||| Invariant witness: Multiset addition of manifest and spectral sectors yields total mass 4: 2 ⊕ 2 = 4.
 public export
 0 prfFourGeometriesMultisetPartition2Plus2 :
-  unwrapBox (totalMassBox FourGeometriesMultiset) = 4
+  totalMassBox FourGeometriesMultiset = intToBoxInt 4
 prfFourGeometriesMultisetPartition2Plus2 = Refl
 
 ||| Validated 13-smooth dimension of the 4-geometry multiset carrier (2 ⊕ 2 = 4).
@@ -175,8 +175,8 @@ public export
 record DyadicGeometryFixedPoint where
   constructor MkDyadicGeometryFixedPoint
   0 dyadicFixedPoint : GohDyadicFixedPoint
-  0 manifestMass     : unwrapBox (totalMassBox ManifestGeometryMultiset) = 2
-  0 spectralMass     : unwrapBox (totalMassBox SpectralGeometryMultiset) = 2
+  0 manifestMass     : totalMassBox ManifestGeometryMultiset = intToBoxInt 2
+  0 spectralMass     : totalMassBox SpectralGeometryMultiset = intToBoxInt 2
   0 fourGeomCount    : length [EllipticGeom, HyperbolicGeom, ParabolicGeom, SubstrateGeom] = 4
 
 public export

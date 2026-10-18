@@ -335,7 +335,7 @@ gohAuxiliaryToStreamPoly : {deg : Nat} -> GohAuxiliary deg -> StreamPolynumber
 gohAuxiliaryToStreamPoly (Phi coeffs) =
   filterMapStream (\(i, frac) =>
     let c = frac.num
-    in if unwrapBox c /= 0 then Just (i, c) else Nothing)
+    in if boxIsNonZero c then Just (i, c) else Nothing)
     (streamVectWithIndex 0 coeffs)
 
 ||| Raises a 1D StreamPolynumber to a natural power via repeated Cauchy convolution.
@@ -474,11 +474,16 @@ prfGohFractionalRange = Refl
 -- 5. COMPOSITIONAL SEMIGROUP & FIBONACCI SPECIALIZATION WITNESSES
 --------------------------------------------------------------------------------
 
+||| Evaluates a GohAuxiliary spread polynomial directly over BoxInt coordinates using Horner's rule.
+public export
+evalGohPolyBox : GohAuxiliary deg -> BoxInt -> BoxInt
+evalGohPolyBox (Phi coeffs) x =
+  foldr (\c, acc => addBox (c.num) (mulBox x acc)) (intToBoxInt 0) coeffs
+
 ||| Evaluates a GohAuxiliary spread polynomial directly over integer coordinates using Horner's rule.
 public export
 evalGohPolyInt : GohAuxiliary deg -> Integer -> Integer
-evalGohPolyInt (Phi coeffs) x =
-  foldr (\c, acc => unwrapBox (c.num) + (x * acc)) 0 coeffs
+evalGohPolyInt poly x = unwrapBox (evalGohPolyBox poly (intToBoxInt x))
 
 ||| Direct compositional evaluation of spread polynomials: (Z_m ∘ Z_n)(s)
 public export

@@ -634,7 +634,7 @@ spreadRecurrenceStream s =
 public export
 adjunctionAuditPred : Bool -> (Nat, BoxInt) -> Bool
 adjunctionAuditPred acc (idx, w) =
-  acc && ((idx == 0 && unwrapBox w == 42) || (idx == 1 && unwrapBox w == 99))
+  acc && ((idx == 0 && w == intToBoxInt 42) || (idx == 1 && w == intToBoxInt 99))
 
 ||| Audit witness verifying that StreamingScaleAdjunction round-trip preserves token weights.
 public export
@@ -680,7 +680,7 @@ makeAdjunctionSheaf cell sectionFn adj =
 public export
 sheafCommutationAuditPred : Bool -> (Nat, BoxInt) -> Bool
 sheafCommutationAuditPred acc (idx, w) =
-  acc && ((idx == 0 && unwrapBox w == 10) || (idx == 1 && unwrapBox w == 20))
+  acc && ((idx == 0 && w == intToBoxInt 10) || (idx == 1 && w == intToBoxInt 20))
 
 ||| Audit witness verifying that CoinductiveMultisetSheaf local restriction commutes with stream identity:
 public export

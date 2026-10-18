@@ -110,7 +110,7 @@ auditGohFreeEnergyMinimization n raw =
   let entropyFn : GohMultiset -> BoxInt
       entropyFn m = natToBoxInt (gohDegreeSum m)
       st = evaluateGohActiveInferenceStep n entropyFn raw
-  in unwrapBox st.gohSurprise <= 0
+  in st.gohSurprise <= intToBoxInt 0
 
 ------------------------------------------------------------------------
 -- 3. TYPE-STRATIFIED STAGED MARKOV BLANKET

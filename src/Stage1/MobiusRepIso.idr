@@ -21,9 +21,9 @@ zeroTriad = MkTriadQuadrance (MkBoxInt 0) (MkBoxInt 0) (MkBoxInt 0)
 public export
 triadEqMono : TriadQuadrance -> TriadQuadrance -> Bool
 triadEqMono (MkTriadQuadrance b1 r1 g1) (MkTriadQuadrance b2 r2 g2) =
-  unwrapBox b1 == unwrapBox b2 &&
-  unwrapBox r1 == unwrapBox r2 &&
-  unwrapBox g1 == unwrapBox g2
+  b1 == b2 &&
+  r1 == r2 &&
+  g1 == g2
 
 ||| Canonical Representation Isomorphism for Layer 1 Möbius Phase Unfolding.
 public export

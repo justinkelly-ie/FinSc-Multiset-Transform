@@ -35,7 +35,7 @@ public export
 subsumesBox : Eq a => List a -> Box a -> Box a -> Bool
 subsumesBox [] m1 m2 = True
 subsumesBox (x :: xs) m1 m2 =
-  (unwrapBox (lookupBox x m1) <= unwrapBox (lookupBox x m2)) && subsumesBox xs m1 m2
+  (lookupBox x m1 <= lookupBox x m2) && subsumesBox xs m1 m2
 
 ||| A Law Algebra state carrying certified UniverseState capacity
 public export
