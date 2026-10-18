@@ -33,8 +33,8 @@ public export
 companionMaxel2D : BoxInt -> BoxInt -> VM.Maxel
 companionMaxel2D c0 c1 =
   let baseShift = [(VM.MkPixel 2 1, intToBoxInt 1)]
-      c0Edge = if unwrapBox c0 == 0 then [] else [(VM.MkPixel 1 2, c0)]
-      c1Edge = if unwrapBox c1 == 0 then [] else [(VM.MkPixel 2 2, c1)]
+      c0Edge = if boxIsZero c0 then [] else [(VM.MkPixel 1 2, c0)]
+      c1Edge = if boxIsZero c1 then [] else [(VM.MkPixel 2 2, c1)]
   in VM.MkMaxel (baseShift ++ c0Edge ++ c1Edge)
 
 ||| Natural transformation eta from a quadratic StreamPolynumber to its 2D companion Maxel.
@@ -42,13 +42,10 @@ companionMaxel2D c0 c1 =
 public export
 companionMaxelFromPoly : StreamPolynumber -> VM.Maxel
 companionMaxelFromPoly p =
-  let terms = streamPolyToListNat 5 p
-      c0 = case find (\(d, _) => d == 0) terms of
-             Just (_, w) => w
-             Nothing     => intToBoxInt 0
-      c1 = case find (\(d, _) => d == 1) terms of
-             Just (_, w) => w
-             Nothing     => intToBoxInt 0
+  let (c0, c1) = FS.foldStreamNat 5 (\(acc0, acc1), (d, w) =>
+                   if d == 0 then (w, acc1)
+                   else if d == 1 then (acc0, w)
+                   else (acc0, acc1)) (intToBoxInt 0, intToBoxInt 0) p
   in companionMaxel2D c0 c1
 
 ||| Constructs an N-dimensional companion Maxel for monic polynomial
@@ -59,13 +56,13 @@ public export
 companionMaxelND : (n : Nat) -> (coeffs : Vect n BoxInt) -> VM.Maxel
 companionMaxelND Z [] = VM.MkMaxel []
 companionMaxelND (S Z) [c0] =
-  if unwrapBox c0 == 0
+  if boxIsZero c0
      then VM.MkMaxel []
      else VM.MkMaxel [(VM.MkPixel 1 1, c0)]
 companionMaxelND (S (S k)) coeffs =
   let dim = S (S k)
       subDiag = map (\i => (VM.MkPixel (i + 2) (i + 1), intToBoxInt 1)) (the (List Nat) [0..k])
-      colEntries = filterMap (\(i, c) => if unwrapBox c /= 0 then Just (VM.MkPixel (i + 1) dim, c) else Nothing)
+      colEntries = filterMap (\(i, c) => if boxIsNonZero c then Just (VM.MkPixel (i + 1) dim, c) else Nothing)
                              (zip (the (List Nat) [0..(S k)]) (toList coeffs))
   in VM.MkMaxel (subDiag ++ colEntries)
   where
@@ -110,8 +107,7 @@ extractCoeffsTree terms =
 public export
 streamPolyToBoxTree : (fuel : Nat) -> StreamPolynumber -> BoxMultisetTree Nat
 streamPolyToBoxTree fuel p =
-  let terms = streamPolyToListNat fuel p
-  in extractCoeffsTree terms
+  FS.foldStreamNat fuel (\acc, (deg, w) => setBoxTree deg w acc) BoxLeaf p
 
 ------------------------------------------------------------------------
 -- 2. WILDBERGER MULTIPLE SPREAD RECURRENCE TRANSFER MAXEL
@@ -137,7 +133,7 @@ spreadTransferMaxel s =
       w13 = mulBox (intToBoxInt 2) s
       e11 = [(VM.MkPixel 1 1, w11)]
       e12 = [(VM.MkPixel 1 2, w12)]
-      e13 = if unwrapBox w13 == 0 then [] else [(VM.MkPixel 1 3, w13)]
+      e13 = if boxIsZero w13 then [] else [(VM.MkPixel 1 3, w13)]
       e21 = [(VM.MkPixel 2 1, intToBoxInt 1)]
       e33 = [(VM.MkPixel 3 3, intToBoxInt 1)]
   in VM.MkMaxel (e11 ++ e12 ++ e13 ++ e21 ++ e33)
