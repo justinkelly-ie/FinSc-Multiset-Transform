@@ -12,6 +12,7 @@ import Stage1.Goh.Factor
 import Data.Fuel
 import Data.List
 import Data.Vect
+import Stage1.MultisetTree
 
 %default total
 
@@ -97,6 +98,20 @@ companionMaxelFromPolyDeg deg p =
   let terms = streamPolyToListNat (S deg) p
       coeffs = extractCoeffsVect deg 0 terms
   in companionMaxelND deg coeffs
+
+||| Extracts sparse polynomial terms directly into a balanced BoxMultisetTree Nat in O(N log N) time.
+||| Prunes zero coefficients to preserve active physical support.
+public export
+extractCoeffsTree : List (Nat, BoxInt) -> BoxMultisetTree Nat
+extractCoeffsTree terms =
+  foldl (\acc, (deg, w) => setBoxTree deg w acc) BoxLeaf terms
+
+||| Converts a StreamPolynumber directly to a balanced BoxMultisetTree Nat bounded by fuel.
+public export
+streamPolyToBoxTree : (fuel : Nat) -> StreamPolynumber -> BoxMultisetTree Nat
+streamPolyToBoxTree fuel p =
+  let terms = streamPolyToListNat fuel p
+  in extractCoeffsTree terms
 
 ------------------------------------------------------------------------
 -- 2. WILDBERGER MULTIPLE SPREAD RECURRENCE TRANSFER MAXEL
