@@ -29,16 +29,16 @@ record CosmicMultiset where
 ||| Calculates total active budget across the direct-sum multiset.
 public export
 totalCosmicMultisetBudget : CosmicMultiset -> Nat
-totalCosmicMultisetBudget (MkCosmicMultiset (MkBoxel v) de dm) =
-  length v + length (maxelPixels de) + length (vexelTerms dm)
+totalCosmicMultisetBudget (MkCosmicMultiset vm de dm) =
+  length vm.voxels + length (maxelPixels de) + length (vexelTerms dm)
 
 ||| Embeds a Stage0 UniverseState into the CosmicMultiset.
 public export
 stateToCosmicMultiset : {vm, de, dm : Nat} -> Stage0.UniverseState.UniverseState vm de dm -> CosmicMultiset
 stateToCosmicMultiset (MkUniverseState vmVect deVect dmVect) =
-  let vmTerms = toList (tabulate (\idx => (MkVoxel (finToNat idx + 1) 1 1, index idx vmVect)))
-      deTerms = toList (tabulate (\idx => (MkPixel (finToNat idx + 1) 1, index idx deVect)))
-      dmTerms = toList (tabulate (\idx => (MkUnixel (finToNat idx + 1), index idx dmVect)))
+  let vmTerms = toList (tabulate (\idx => (mkVoxel (finToNat idx + 1) 1 1, index idx vmVect)))
+      deTerms = toList (tabulate (\idx => (mkPixel (finToNat idx + 1) 1, index idx deVect)))
+      dmTerms = toList (tabulate (\idx => (mkUnixel (finToNat idx + 1), index idx dmVect)))
   in MkCosmicMultiset (canonicalizeBoxel (MkBoxel vmTerms)) (mkMaxel deTerms) (mkVexel dmTerms)
 
 ------------------------------------------------------------------------

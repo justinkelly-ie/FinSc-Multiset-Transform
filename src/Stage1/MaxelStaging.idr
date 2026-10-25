@@ -104,10 +104,10 @@ stagedMatrixPower fuel mat exp = stagedFastMatPower fuel (splice mat) exp
 public export
 vect2x2ToMaxel : Vect 2 (Vect 2 BoxInt) -> Maxel
 vect2x2ToMaxel [[m11, m12], [m21, m22]] =
-  let p11 = (MkPixel 1 1, m11)
-      p12 = (MkPixel 1 2, m12)
-      p21 = (MkPixel 2 1, m21)
-      p22 = (MkPixel 2 2, m22)
+  let p11 = (mkPixel 1 1, m11)
+      p12 = (mkPixel 1 2, m12)
+      p21 = (mkPixel 2 1, m21)
+      p22 = (mkPixel 2 2, m22)
   in canonicalizeMaxel (MkMaxel [p11, p12, p21, p22])
 
 ||| Staged 2x2 companion Maxel multiplication evaluating straight-line scalar dot products:

@@ -34,9 +34,9 @@ import Stage1.MultisetTree
 public export
 companionMaxel2D : BoxInt -> BoxInt -> Maxel
 companionMaxel2D c0 c1 =
-  let baseShift = [(MkPixel 2 1, intToBoxInt 1)]
-      c0Edge = if boxIsZero c0 then [] else [(MkPixel 1 2, c0)]
-      c1Edge = if boxIsZero c1 then [] else [(MkPixel 2 2, c1)]
+  let baseShift = [(mkPixel 2 1, intToBoxInt 1)]
+      c0Edge = if boxIsZero c0 then [] else [(mkPixel 1 2, c0)]
+      c1Edge = if boxIsZero c1 then [] else [(mkPixel 2 2, c1)]
   in MkMaxel (baseShift ++ c0Edge ++ c1Edge)
 
 ||| Natural transformation eta from a quadratic StreamPolynumber to its 2D companion Maxel.
@@ -60,11 +60,11 @@ companionMaxelND Z [] = MkMaxel []
 companionMaxelND (S Z) [c0] =
   if boxIsZero c0
      then MkMaxel []
-     else MkMaxel [(MkPixel 1 1, c0)]
+     else MkMaxel [(mkPixel 1 1, c0)]
 companionMaxelND (S (S k)) coeffs =
   let dim = S (S k)
-      subDiag = map (\i => (MkPixel (i + 2) (i + 1), intToBoxInt 1)) (the (List Nat) [0..k])
-      colEntries = filterMap (\(i, c) => if boxIsNonZero c then Just (MkPixel (i + 1) dim, c) else Nothing)
+      subDiag = map (\i => (mkPixel (i + 2) (i + 1), intToBoxInt 1)) (the (List Nat) [0..k])
+      colEntries = filterMap (\(i, c) => if boxIsNonZero c then Just (mkPixel (i + 1) dim, c) else Nothing)
                              (zip (the (List Nat) [0..(S k)]) (toList coeffs))
   in MkMaxel (subDiag ++ colEntries)
   where
@@ -133,11 +133,11 @@ spreadTransferMaxel s =
   let w11 = subBox (intToBoxInt 2) (mulBox (intToBoxInt 4) s)
       w12 = intToBoxInt (-1)
       w13 = mulBox (intToBoxInt 2) s
-      e11 = [(MkPixel 1 1, w11)]
-      e12 = [(MkPixel 1 2, w12)]
-      e13 = if boxIsZero w13 then [] else [(MkPixel 1 3, w13)]
-      e21 = [(MkPixel 2 1, intToBoxInt 1)]
-      e33 = [(MkPixel 3 3, intToBoxInt 1)]
+      e11 = [(mkPixel 1 1, w11)]
+      e12 = [(mkPixel 1 2, w12)]
+      e13 = if boxIsZero w13 then [] else [(mkPixel 1 3, w13)]
+      e21 = [(mkPixel 2 1, intToBoxInt 1)]
+      e33 = [(mkPixel 3 3, intToBoxInt 1)]
   in MkMaxel (e11 ++ e12 ++ e13 ++ e21 ++ e33)
 
 ||| Applies the 3x3 Spread Transfer Maxel to an affine state triple (S_n, S_{n-1}, 1).
@@ -191,9 +191,9 @@ spreadRecurrenceHyloFuelModel fuel = spreadRecurrenceHyloNat (gohSteps fuel)
 ||| Constructs canonical identity Maxel for small dimensions.
 public export
 identityMaxelDim : Nat -> Maxel
-identityMaxelDim 2 = MkMaxel [ (MkPixel 1 1, intToBoxInt 1), (MkPixel 2 2, intToBoxInt 1) ]
-identityMaxelDim 3 = MkMaxel [ (MkPixel 1 1, intToBoxInt 1), (MkPixel 2 2, intToBoxInt 1), (MkPixel 3 3, intToBoxInt 1) ]
-identityMaxelDim _ = MkMaxel [ (MkPixel 1 1, intToBoxInt 1) ]
+identityMaxelDim 2 = MkMaxel [ (mkPixel 1 1, intToBoxInt 1), (mkPixel 2 2, intToBoxInt 1) ]
+identityMaxelDim 3 = MkMaxel [ (mkPixel 1 1, intToBoxInt 1), (mkPixel 2 2, intToBoxInt 1), (mkPixel 3 3, intToBoxInt 1) ]
+identityMaxelDim _ = MkMaxel [ (mkPixel 1 1, intToBoxInt 1) ]
 
 ||| Fast logarithmic binary exponentiation for Maxel operators (Rule 04).
 ||| Computes M^exp in O(log exp) steps via repeated squaring of consolidated Maxels.
@@ -223,12 +223,12 @@ fastSpreadPower _ 1 s = s
 fastSpreadPower fuel (S k) s =
   let m = spreadTransferMaxel s
       mPow = fastMaxelPower fuel k 3 m
-      vInit = MkVexel [ (MkUnixel 1, s)
-                      , (MkUnixel 2, intToBoxInt 0)
-                      , (MkUnixel 3, intToBoxInt 1)
+      vInit = MkVexel [ (mkUnixel 1, s)
+                      , (mkUnixel 2, intToBoxInt 0)
+                      , (mkUnixel 3, intToBoxInt 1)
                       ]
       vFinal = actMaxelVexel mPow vInit
-  in lookupUnixel (MkUnixel 1) vFinal
+  in lookupUnixel (mkUnixel 1) vFinal
 
 ------------------------------------------------------------------------
 -- 4. COMPILE-TIME INVARIANT AUDITS (RULE 01)
@@ -241,7 +241,7 @@ auditCompanionSupportProof : Bool
 auditCompanionSupportProof =
   let cMaxel = companionMaxel2D (intToBoxInt 2) (intToBoxInt 3)
       supp = supportMaxel cMaxel
-  in supp == [MkPixel 1 2, MkPixel 2 1, MkPixel 2 2]
+  in supp == [mkPixel 1 2, mkPixel 2 1, mkPixel 2 2]
 
 ||| Verifies dynamic support pruning: for s = 0, edge [1, 3] drops from the support!
 ||| For s = 1, edge [1, 3] is present with weight 2.
@@ -252,8 +252,8 @@ auditSpreadSupportPruningProof =
       m1 = spreadTransferMaxel (intToBoxInt 1)
       s0 = supportMaxel m0
       s1 = supportMaxel m1
-      has13_in_0 = any (\(MkPixel r c) => r == 1 && c == 3) s0
-      has13_in_1 = any (\(MkPixel r c) => r == 1 && c == 3) s1
+      has13_in_0 = any (\px => pixelRow px == 1 && pixelCol px == 3) s0
+      has13_in_1 = any (\px => pixelRow px == 1 && pixelCol px == 3) s1
   in not has13_in_0 && has13_in_1
 
 ||| Verifies orthogonal spread oscillation (s = 1):
@@ -299,12 +299,12 @@ fastSpreadPowerNat _ 1 s = s
 fastSpreadPowerNat fuel (S k) s =
   let m = spreadTransferMaxel s
       mPow = fastMaxelPowerNat fuel k 3 m
-      vInit = MkVexel [ (MkUnixel 1, s)
-                      , (MkUnixel 2, intToBoxInt 0)
-                      , (MkUnixel 3, intToBoxInt 1)
+      vInit = MkVexel [ (mkUnixel 1, s)
+                      , (mkUnixel 2, intToBoxInt 0)
+                      , (mkUnixel 3, intToBoxInt 1)
                       ]
       vFinal = actMaxelVexel mPow vInit
-  in lookupUnixel (MkUnixel 1) vFinal
+  in lookupUnixel (mkUnixel 1) vFinal
 
 ||| Verifies fast O(log N) repeated squaring produces identical results to linear hylomorphism:
 ||| Tests S_1, S_2, S_3, S_4 for both s = 1 (orthogonal) and s = 2 (hyperbolic).

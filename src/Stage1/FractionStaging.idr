@@ -2,6 +2,7 @@ module Stage1.FractionStaging
 
 import Stage0.BoxInt
 import Stage0.SignedFraction
+import Stage1.Basis.Coordinate
 import Stage1.UnixelFraction
 import Stage1.TypeTheory.Staging
 import Stage1.TypeTheory.TwoLevel

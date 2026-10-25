@@ -29,32 +29,32 @@ import Data.Fuel
 ||| Extracts physical mass quantity from a focal Vexel multiset node (Unixel 0).
 public export
 multisetMass : Vexel -> BoxInt
-multisetMass v = lookupUnixel (MkUnixel 0) v
+multisetMass v = lookupUnixel (mkUnixel 0) v
 
 ||| Extracts X-momentum vector quantity from a focal Vexel multiset node (Unixel 1).
 public export
 multisetMomentumX : Vexel -> BoxInt
-multisetMomentumX v = lookupUnixel (MkUnixel 1) v
+multisetMomentumX v = lookupUnixel (mkUnixel 1) v
 
 ||| Extracts Y-momentum vector quantity from a focal Vexel multiset node (Unixel 2).
 public export
 multisetMomentumY : Vexel -> BoxInt
-multisetMomentumY v = lookupUnixel (MkUnixel 2) v
+multisetMomentumY v = lookupUnixel (mkUnixel 2) v
 
 ||| Checks if focal Vexel multiset is a boundary node (Unixel 3).
 public export
 isMultisetBoundary : Vexel -> Bool
-isMultisetBoundary v = lookupUnixel (MkUnixel 3) v /= intToBoxInt 0
+isMultisetBoundary v = lookupUnixel (mkUnixel 3) v /= intToBoxInt 0
 
 ||| Constructs a native Vexel multiset carrying physical multiset quantities.
 export %noinline
 makeMultisetVexel : BoxInt -> BoxInt -> BoxInt -> Bool -> Vexel
 makeMultisetVexel m jx jy isB =
   let bVal = if isB then intToBoxInt 1 else intToBoxInt 0
-  in canonicalizeVexel (MkVexel [ (MkUnixel 0, m)
-                                , (MkUnixel 1, jx)
-                                , (MkUnixel 2, jy)
-                                , (MkUnixel 3, bVal)
+  in canonicalizeVexel (MkVexel [ (mkUnixel 0, m)
+                                , (mkUnixel 1, jx)
+                                , (mkUnixel 2, jy)
+                                , (mkUnixel 3, bVal)
                                 ])
 
 ||| Initial baseline multiset state as a Vexel payload
@@ -134,9 +134,10 @@ Eq MacroGridNode where
 ||| Coarse-grains a physical Unixel into macro grid nodes.
 public export
 multisetToMacroNode : Unixel -> MacroGridNode
-multisetToMacroNode (MkUnixel 3) = BoundaryGridNode
-multisetToMacroNode (MkUnixel 0) = ActiveGridNode
-multisetToMacroNode _            = PassiveGridNode
+multisetToMacroNode u = case unwrapUnixel u of
+  3 => BoundaryGridNode
+  0 => ActiveGridNode
+  _ => PassiveGridNode
 
 ||| Pure Multiset Zoom Out (f_*) operator coarse-graining a multiset vexel into macro grid nodes.
 export %noinline
@@ -159,12 +160,12 @@ auditMultisetGridZoomProof () =
 
 ||| Compiler proof auditing mass conservation across multiset dynamics steps over native Vexel multisets.
 public export
-0 verifyMultisetMassConservation : multisetToMacroNode (MkUnixel 0) = ActiveGridNode
+0 verifyMultisetMassConservation : multisetToMacroNode (mkUnixel 0) = ActiveGridNode
 verifyMultisetMassConservation = Refl
 
 ||| Proves that multiset dynamics updates preserve boundary classification.
 public export
-0 transformMultisetMassConservation : multisetToMacroNode (MkUnixel 3) = BoundaryGridNode
+0 transformMultisetMassConservation : multisetToMacroNode (mkUnixel 3) = BoundaryGridNode
 transformMultisetMassConservation = Refl
 
 ------------------------------------------------------------------------
@@ -174,7 +175,7 @@ transformMultisetMassConservation = Refl
 ||| Erased compile-time proof witness verifying total mass conservation across a multiset dynamics step.
 public export
 0 MultisetConservationWitness : GridContext Vexel -> Type
-MultisetConservationWitness g = (multisetToMacroNode (MkUnixel 0) = ActiveGridNode, multisetToMacroNode (MkUnixel 3) = BoundaryGridNode)
+MultisetConservationWitness g = (multisetToMacroNode (mkUnixel 0) = ActiveGridNode, multisetToMacroNode (mkUnixel 3) = BoundaryGridNode)
 
 ||| Static compile-time witness for any multiset grid context.
 public export

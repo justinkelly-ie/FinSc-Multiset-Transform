@@ -17,7 +17,7 @@ import Stage1.Polynumber
 ||| Defined as the single basis Pixel [1, 2] with unit weight.
 public export
 epsilon : Maxel
-epsilon = MkMaxelTree (BoxNode 1 BoxLeaf (MkPixel 1 2) (intToBoxInt 1) BoxLeaf)
+epsilon = MkMaxelTree (BoxNode 1 BoxLeaf (mkPixel 1 2) (intToBoxInt 1) BoxLeaf)
 
 ||| Multiplication rule for the infinitesimal token: ε * ε = 0.
 ||| Computed purely via pixel multiset contraction [1, 2] * [1, 2] => [].
@@ -35,19 +35,19 @@ public export
 dualNumber : (realPart : BoxInt) -> (epsPart : BoxInt) -> Maxel
 dualNumber r i =
   MkMaxelTree (BoxNode 2
-                 (BoxNode 1 BoxLeaf (MkPixel 1 1) r BoxLeaf)
-                 (MkPixel 1 2) i
-                 (BoxNode 1 BoxLeaf (MkPixel 2 2) r BoxLeaf))
+                 (BoxNode 1 BoxLeaf (mkPixel 1 1) r BoxLeaf)
+                 (mkPixel 1 2) i
+                 (BoxNode 1 BoxLeaf (mkPixel 2 2) r BoxLeaf))
 
 ||| Extracts the real scalar part of a Dual Number Maxel.
 public export
 dualReal : Maxel -> BoxInt
-dualReal m = lookupPixel (MkPixel 1 1) m
+dualReal m = lookupPixel (mkPixel 1 1) m
 
 ||| Extracts the nilpotent velocity / derivative part of a Dual Number Maxel.
 public export
 dualEps : Maxel -> BoxInt
-dualEps m = lookupPixel (MkPixel 1 2) m
+dualEps m = lookupPixel (mkPixel 1 2) m
 
 ||| Multiplies two dual numbers via standard Maxel multiset multiplication.
 ||| (r1 + i1 ε)(r2 + i2 ε) = r1*r2 + (r1*i2 + i1*r2)ε because ε² = 0.

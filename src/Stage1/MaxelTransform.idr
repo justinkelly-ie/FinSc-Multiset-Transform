@@ -102,14 +102,14 @@ stencilTransform sec frac stencils = mkMaxelTransform sec frac stencils
 public export
 makeGaugeFieldMaxel : BoxInt -> BoxInt -> Maxel
 makeGaugeFieldMaxel e b =
-  canonicalizeMaxel (MkMaxel [ (MkPixel 1 0, e), (MkPixel 2 3, b) ])
+  canonicalizeMaxel (MkMaxel [ (mkPixel 1 0, e), (mkPixel 2 3, b) ])
 
 ||| Computes total electromagnetic energy density Q_EM = E^2 + B^2 directly from a 2-form Maxel.
 public export
 gaugeFieldEnergy : Maxel -> BoxInt
 gaugeFieldEnergy m =
-  let e = lookupPixel (MkPixel 1 0) m
-      b = lookupPixel (MkPixel 2 3) m
+  let e = lookupPixel (mkPixel 1 0) m
+      b = lookupPixel (mkPixel 2 3) m
   in addBox (mulBox e e) (mulBox b b)
 
 ||| Constructs a U(1) / Dihedral Gauge Phase Rotation MaxelTransform mapping field Maxel states.
@@ -207,14 +207,14 @@ actTransformMaxel (MkMaxelTransform _ _ (MkBox tPairs)) m =
 public export
 maxelToTransform : MetricSector -> UnixelFraction -> Maxel -> MaxelTransform Unixel Unixel
 maxelToTransform sec frac m =
-  let pairs = map (\(MkPixel i j, w) => ((MkUnixel i, MkUnixel j), w)) (maxelPixels m)
+  let pairs = map (\(px, w) => ((mkUnixel (pixelRow px), mkUnixel (pixelCol px)), w)) (maxelPixels m)
   in MkMaxelTransform sec frac (MkBox pairs)
 
 ||| Converts a MaxelTransform back into a canonical 2D Maxel matrix.
 public export
 transformToMaxel : MaxelTransform Unixel Unixel -> Maxel
 transformToMaxel (MkMaxelTransform _ _ (MkBox tPairs)) =
-  let pxs = map (\((MkUnixel i, MkUnixel j), w) => (MkPixel i j, w)) tPairs
+  let pxs = map (\((u1, u2), w) => (mkPixel (unwrapUnixel u1) (unwrapUnixel u2), w)) tPairs
   in mkMaxel pxs
 
 ------------------------------------------------------------------------
@@ -594,8 +594,10 @@ makeStreamingScaleAdjunction t =
 ||| Global scale factor carries 1/q, while integer entries carry (2q - 4p), -q, and q.
 public export
 spreadCompanionMaxel : UnixelFraction -> MaxelTransform (Fin 2) (Fin 2)
-spreadCompanionMaxel (MkUnixelFraction p (MkUnixel q)) =
-  let qBox = natToBoxInt q
+spreadCompanionMaxel qFrac =
+  let p = qFrac.num
+      q = denominatorNat qFrac
+      qBox = natToBoxInt q
       twoQ = mulBox (intToBoxInt 2) qBox
       fourP = mulBox (intToBoxInt 4) p
       entry00 = subBox twoQ fourP
