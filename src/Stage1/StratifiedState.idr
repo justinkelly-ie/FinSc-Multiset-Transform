@@ -30,7 +30,7 @@ record CosmicMultiset where
 public export
 totalCosmicMultisetBudget : CosmicMultiset -> Nat
 totalCosmicMultisetBudget (MkCosmicMultiset vm de dm) =
-  length vm.voxels + length (maxelPixels de) + length (vexelTerms dm)
+  length (voxels vm) + length (maxelPixels de) + length (vexelTerms dm)
 
 ||| Embeds a Stage0 UniverseState into the CosmicMultiset.
 public export

@@ -107,7 +107,8 @@ autoDiffAt p a =
 ||| Extracts term count of a Maxel multiset.
 public export
 maxelTermsCount : Maxel -> Nat
-maxelTermsCount (MkMaxelTree t) = boxTreeSize t
+maxelTermsCount t = boxTreeSize t
+
 
 ||| QTT 0 erased proof witness auditing exact Dual Number 3-term carrier structure (real, real-diagonal, eps-tangent).
 public export
