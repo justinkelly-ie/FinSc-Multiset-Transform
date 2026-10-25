@@ -1,7 +1,7 @@
 module Stage1.MaxelStaging
 
 import Stage0.BoxInt
-import Stage1.VexelMaxel
+import Stage1.Carrier.Maxel
 import Stage1.TypeTheory.Staging
 import Stage1.TypeTheory.TwoLevel
 import Data.Vect

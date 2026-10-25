@@ -170,26 +170,26 @@ matrixToShift m =
   in
     (dx, dy, dz)
 
-||| Computes chromogeometric quadrance based on sector tag and 3D displacement deltas.
+||| Computes chromogeometric quadrance based on geometry tag and 3D displacement deltas.
 public export
-computeQuadrance : GeometrySector -> (Int, Int, Int) -> Integer
+computeQuadrance : Geometry -> (Int, Int, Int) -> Integer
 computeQuadrance Elliptic   (dx, dy, dz) = cast (dx * dx + dy * dy + dz * dz + 1)
 computeQuadrance Hyperbolic (dx, dy, dz) = cast (dx * dx + dy * dy - dz * dz + 1)
 computeQuadrance Parabolic  (dx, dy, dz) = cast (dx * dx + dy * dy + 1)
 computeQuadrance Substrate  _            = 1
 
 ||| The evolution operator over 3D Toroidal Boxel Canvas T^3.
-||| Transforms a Boxel spatial state according to a TernaryMatrix operator key and sector tag.
+||| Transforms a Boxel spatial state according to a TernaryMatrix operator key and geometry tag.
 public export
-driveSpatialUpdate : GeometrySector -> TernaryMatrix -> Boxel -> StateTransition Boxel
-driveSpatialUpdate sector matrix (MkBoxel (x, y, z) intensity) =
+driveSpatialUpdate : Geometry -> TernaryMatrix -> Boxel -> StateTransition Boxel
+driveSpatialUpdate geom matrix (MkBoxel (x, y, z) intensity) =
   let
     (dx, dy, dz) = matrixToShift matrix
     newX = wrap (x + dx)
     newY = wrap (y + dy)
     newZ = wrap (z + dz)
     phaseScale = cast (source matrix + target matrix)
-    quadrance  = computeQuadrance sector (dx, dy, dz)
+    quadrance  = computeQuadrance geom (dx, dy, dz)
   in
     MkTransition $ MkMonoidView $ MkWave
       [ (MkBoxel (newX, newY, newZ) (intensity * phaseScale * quadrance), 1) ]
@@ -222,7 +222,7 @@ fusedFilterWave p (MkWave kvs) =
 
 ||| Deforested spatial Boxel update stream pipeline.
 %inline public export
-fusedDriveSpatialUpdate : GeometrySector -> TernaryMatrix -> Boxel -> FusedStream (Boxel, Integer)
-fusedDriveSpatialUpdate sector matrix boxel =
-  let MkTransition (MkMonoidView wave) = driveSpatialUpdate sector matrix boxel
+fusedDriveSpatialUpdate : Geometry -> TernaryMatrix -> Boxel -> FusedStream (Boxel, Integer)
+fusedDriveSpatialUpdate geom matrix boxel =
+  let MkTransition (MkMonoidView wave) = driveSpatialUpdate geom matrix boxel
   in streamFreeWave wave

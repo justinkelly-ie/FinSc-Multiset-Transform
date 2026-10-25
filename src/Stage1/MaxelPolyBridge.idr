@@ -6,7 +6,9 @@ import Stage0.StructuralFuel
 import Stage0.OnSeq.FusedStream as FS
 import Stage0.StreamPolynumber
 import Stage1.ConjugateHylo
-import Stage1.VexelMaxel as VM
+import Stage1.Carrier.Maxel
+import Stage1.Carrier.Vexel
+import Stage1.Basis.Coordinate
 import Stage1.VexelStream as VS
 import Stage1.Goh.Factor
 import Data.Fuel
@@ -30,17 +32,17 @@ import Stage1.MultisetTree
 ||| - [1, 2] (feedback edge: c0, omitted if c0 == 0)
 ||| - [2, 2] (self-loop: c1, omitted if c1 == 0)
 public export
-companionMaxel2D : BoxInt -> BoxInt -> VM.Maxel
+companionMaxel2D : BoxInt -> BoxInt -> Maxel
 companionMaxel2D c0 c1 =
-  let baseShift = [(VM.MkPixel 2 1, intToBoxInt 1)]
-      c0Edge = if boxIsZero c0 then [] else [(VM.MkPixel 1 2, c0)]
-      c1Edge = if boxIsZero c1 then [] else [(VM.MkPixel 2 2, c1)]
-  in VM.MkMaxel (baseShift ++ c0Edge ++ c1Edge)
+  let baseShift = [(MkPixel 2 1, intToBoxInt 1)]
+      c0Edge = if boxIsZero c0 then [] else [(MkPixel 1 2, c0)]
+      c1Edge = if boxIsZero c1 then [] else [(MkPixel 2 2, c1)]
+  in MkMaxel (baseShift ++ c0Edge ++ c1Edge)
 
 ||| Natural transformation eta from a quadratic StreamPolynumber to its 2D companion Maxel.
 ||| Extracts the c0 (degree 0) and c1 (degree 1) coefficients from the sparse stream.
 public export
-companionMaxelFromPoly : StreamPolynumber -> VM.Maxel
+companionMaxelFromPoly : StreamPolynumber -> Maxel
 companionMaxelFromPoly p =
   let (c0, c1) = FS.foldStreamNat 5 (\(acc0, acc1), (d, w) =>
                    if d == 0 then (w, acc1)
@@ -53,18 +55,18 @@ companionMaxelFromPoly p =
 ||| Subdiagonal entries [k+2, k+1] have weight 1 for 0 <= k < N-1.
 ||| Rightmost column entries [k+1, N] have weight coeffs[k] for 0 <= k < N.
 public export
-companionMaxelND : (n : Nat) -> (coeffs : Vect n BoxInt) -> VM.Maxel
-companionMaxelND Z [] = VM.MkMaxel []
+companionMaxelND : (n : Nat) -> (coeffs : Vect n BoxInt) -> Maxel
+companionMaxelND Z [] = MkMaxel []
 companionMaxelND (S Z) [c0] =
   if boxIsZero c0
-     then VM.MkMaxel []
-     else VM.MkMaxel [(VM.MkPixel 1 1, c0)]
+     then MkMaxel []
+     else MkMaxel [(MkPixel 1 1, c0)]
 companionMaxelND (S (S k)) coeffs =
   let dim = S (S k)
-      subDiag = map (\i => (VM.MkPixel (i + 2) (i + 1), intToBoxInt 1)) (the (List Nat) [0..k])
-      colEntries = filterMap (\(i, c) => if boxIsNonZero c then Just (VM.MkPixel (i + 1) dim, c) else Nothing)
+      subDiag = map (\i => (MkPixel (i + 2) (i + 1), intToBoxInt 1)) (the (List Nat) [0..k])
+      colEntries = filterMap (\(i, c) => if boxIsNonZero c then Just (MkPixel (i + 1) dim, c) else Nothing)
                              (zip (the (List Nat) [0..(S k)]) (toList coeffs))
-  in VM.MkMaxel (subDiag ++ colEntries)
+  in MkMaxel (subDiag ++ colEntries)
   where
     filterMap : (a -> Maybe b) -> List a -> List b
     filterMap _ [] = []
@@ -90,7 +92,7 @@ extractCoeffsVect (S k) idx terms =
 ||| Generalized natural transformation eta from a degree-d StreamPolynumber to its d x d companion Maxel.
 ||| Extracts [c0, c1, ..., c_{d-1}] from the sparse stream and builds companionMaxelND.
 public export
-companionMaxelFromPolyDeg : (deg : Nat) -> StreamPolynumber -> VM.Maxel
+companionMaxelFromPolyDeg : (deg : Nat) -> StreamPolynumber -> Maxel
 companionMaxelFromPolyDeg deg p =
   let terms = streamPolyToListNat (S deg) p
       coeffs = extractCoeffsVect deg 0 terms
@@ -126,17 +128,17 @@ streamPolyToBoxTree fuel p =
 ||| - [2, 1]: weight 1 (state shift)
 ||| - [3, 3]: weight 1 (affine identity)
 public export
-spreadTransferMaxel : BoxInt -> VM.Maxel
+spreadTransferMaxel : BoxInt -> Maxel
 spreadTransferMaxel s =
   let w11 = subBox (intToBoxInt 2) (mulBox (intToBoxInt 4) s)
       w12 = intToBoxInt (-1)
       w13 = mulBox (intToBoxInt 2) s
-      e11 = [(VM.MkPixel 1 1, w11)]
-      e12 = [(VM.MkPixel 1 2, w12)]
-      e13 = if boxIsZero w13 then [] else [(VM.MkPixel 1 3, w13)]
-      e21 = [(VM.MkPixel 2 1, intToBoxInt 1)]
-      e33 = [(VM.MkPixel 3 3, intToBoxInt 1)]
-  in VM.MkMaxel (e11 ++ e12 ++ e13 ++ e21 ++ e33)
+      e11 = [(MkPixel 1 1, w11)]
+      e12 = [(MkPixel 1 2, w12)]
+      e13 = if boxIsZero w13 then [] else [(MkPixel 1 3, w13)]
+      e21 = [(MkPixel 2 1, intToBoxInt 1)]
+      e33 = [(MkPixel 3 3, intToBoxInt 1)]
+  in MkMaxel (e11 ++ e12 ++ e13 ++ e21 ++ e33)
 
 ||| Applies the 3x3 Spread Transfer Maxel to an affine state triple (S_n, S_{n-1}, 1).
 ||| Computes the successor state (S_{n+1}, S_n, 1) in exact BoxInt coordinates.
@@ -186,36 +188,30 @@ public export
 spreadRecurrenceHyloFuelModel : GohFuel cap -> BoxInt -> BoxInt
 spreadRecurrenceHyloFuelModel fuel = spreadRecurrenceHyloNat (gohSteps fuel)
 
-||| Normalizes a Maxel by consolidating duplicate pixels and removing zero weights
-||| via canonical single-pass multiset insertion without quadratic list scans.
-public export
-compressMaxel : VM.Maxel -> VM.Maxel
-compressMaxel = VM.canonicalizeMaxel
-
 ||| Constructs canonical identity Maxel for small dimensions.
 public export
-identityMaxelDim : Nat -> VM.Maxel
-identityMaxelDim 2 = VM.MkMaxel [ (VM.MkPixel 1 1, intToBoxInt 1), (VM.MkPixel 2 2, intToBoxInt 1) ]
-identityMaxelDim 3 = VM.MkMaxel [ (VM.MkPixel 1 1, intToBoxInt 1), (VM.MkPixel 2 2, intToBoxInt 1), (VM.MkPixel 3 3, intToBoxInt 1) ]
-identityMaxelDim _ = VM.MkMaxel [ (VM.MkPixel 1 1, intToBoxInt 1) ]
+identityMaxelDim : Nat -> Maxel
+identityMaxelDim 2 = MkMaxel [ (MkPixel 1 1, intToBoxInt 1), (MkPixel 2 2, intToBoxInt 1) ]
+identityMaxelDim 3 = MkMaxel [ (MkPixel 1 1, intToBoxInt 1), (MkPixel 2 2, intToBoxInt 1), (MkPixel 3 3, intToBoxInt 1) ]
+identityMaxelDim _ = MkMaxel [ (MkPixel 1 1, intToBoxInt 1) ]
 
 ||| Fast logarithmic binary exponentiation for Maxel operators (Rule 04).
 ||| Computes M^exp in O(log exp) steps via repeated squaring of consolidated Maxels.
 public export
-fastMaxelPower : Fuel -> (exp : Nat) -> (dim : Nat) -> (m : VM.Maxel) -> VM.Maxel
+fastMaxelPower : Fuel -> (exp : Nat) -> (dim : Nat) -> (m : Maxel) -> Maxel
 fastMaxelPower Dry _ dim _ = identityMaxelDim dim
 fastMaxelPower (More f) Z dim _ = identityMaxelDim dim
 fastMaxelPower (More f) (S Z) _ m = compressMaxel m
 fastMaxelPower (More f) exp dim m =
   loop f exp (compressMaxel m) (identityMaxelDim dim)
   where
-    loop : Fuel -> Nat -> VM.Maxel -> VM.Maxel -> VM.Maxel
+    loop : Fuel -> Nat -> Maxel -> Maxel -> Maxel
     loop Dry _ _ acc = acc
     loop (More _) Z _ acc = acc
     loop (More f') e base acc =
       let (e', isOdd) = natHalfAndOdd e
-          acc' = if isOdd then compressMaxel (VM.mulMaxel acc base) else acc
-          base' = compressMaxel (VM.mulMaxel base base)
+          acc' = if isOdd then compressMaxel (mulMaxel acc base) else acc
+          base' = compressMaxel (mulMaxel base base)
       in loop f' e' base' acc'
 
 ||| Evaluates the n-th Wildberger multiple spread S_n in O(log n) steps via companion Maxel repeated squaring:
@@ -227,12 +223,12 @@ fastSpreadPower _ 1 s = s
 fastSpreadPower fuel (S k) s =
   let m = spreadTransferMaxel s
       mPow = fastMaxelPower fuel k 3 m
-      vInit = VM.MkVexel [ (VM.MkUnixel 1, s)
-                         , (VM.MkUnixel 2, intToBoxInt 0)
-                         , (VM.MkUnixel 3, intToBoxInt 1)
-                         ]
-      vFinal = VM.actMaxelVexel mPow vInit
-  in VM.lookupUnixel (VM.MkUnixel 1) vFinal
+      vInit = MkVexel [ (MkUnixel 1, s)
+                      , (MkUnixel 2, intToBoxInt 0)
+                      , (MkUnixel 3, intToBoxInt 1)
+                      ]
+      vFinal = actMaxelVexel mPow vInit
+  in lookupUnixel (MkUnixel 1) vFinal
 
 ------------------------------------------------------------------------
 -- 4. COMPILE-TIME INVARIANT AUDITS (RULE 01)
@@ -244,8 +240,8 @@ public export
 auditCompanionSupportProof : Bool
 auditCompanionSupportProof =
   let cMaxel = companionMaxel2D (intToBoxInt 2) (intToBoxInt 3)
-      supp = VM.supportMaxel cMaxel
-  in supp == [VM.MkPixel 1 2, VM.MkPixel 2 1, VM.MkPixel 2 2]
+      supp = supportMaxel cMaxel
+  in supp == [MkPixel 1 2, MkPixel 2 1, MkPixel 2 2]
 
 ||| Verifies dynamic support pruning: for s = 0, edge [1, 3] drops from the support!
 ||| For s = 1, edge [1, 3] is present with weight 2.
@@ -254,10 +250,10 @@ auditSpreadSupportPruningProof : Bool
 auditSpreadSupportPruningProof =
   let m0 = spreadTransferMaxel (intToBoxInt 0)
       m1 = spreadTransferMaxel (intToBoxInt 1)
-      s0 = VM.supportMaxel m0
-      s1 = VM.supportMaxel m1
-      has13_in_0 = any (\(VM.MkPixel r c) => r == 1 && c == 3) s0
-      has13_in_1 = any (\(VM.MkPixel r c) => r == 1 && c == 3) s1
+      s0 = supportMaxel m0
+      s1 = supportMaxel m1
+      has13_in_0 = any (\(MkPixel r c) => r == 1 && c == 3) s0
+      has13_in_1 = any (\(MkPixel r c) => r == 1 && c == 3) s1
   in not has13_in_0 && has13_in_1
 
 ||| Verifies orthogonal spread oscillation (s = 1):
@@ -279,20 +275,20 @@ auditSpreadOrthogonalOscillationProof =
 ||| Fast logarithmic binary exponentiation for Maxel operators with Nat fuel (Rule 04).
 ||| Computes M^exp in O(log exp) steps via repeated squaring of consolidated Maxels using constructive halving.
 public export
-fastMaxelPowerNat : (fuel : Nat) -> (exp : Nat) -> (dim : Nat) -> (m : VM.Maxel) -> VM.Maxel
+fastMaxelPowerNat : (fuel : Nat) -> (exp : Nat) -> (dim : Nat) -> (m : Maxel) -> Maxel
 fastMaxelPowerNat Z _ dim _ = identityMaxelDim dim
 fastMaxelPowerNat (S _) Z dim _ = identityMaxelDim dim
 fastMaxelPowerNat (S _) (S Z) _ m = compressMaxel m
 fastMaxelPowerNat (S f) exp dim m =
   loop f exp (compressMaxel m) (identityMaxelDim dim)
   where
-    loop : Nat -> Nat -> VM.Maxel -> VM.Maxel -> VM.Maxel
+    loop : Nat -> Nat -> Maxel -> Maxel -> Maxel
     loop Z _ _ acc = acc
     loop (S _) Z _ acc = acc
     loop (S f') e base acc =
       let (e', isOdd) = natHalfAndOdd e
-          acc' = if isOdd then compressMaxel (VM.mulMaxel acc base) else acc
-          base' = compressMaxel (VM.mulMaxel base base)
+          acc' = if isOdd then compressMaxel (mulMaxel acc base) else acc
+          base' = compressMaxel (mulMaxel base base)
       in loop f' e' base' acc'
 
 ||| Evaluates the n-th Wildberger multiple spread S_n in O(log n) steps with Nat fuel:
@@ -303,12 +299,12 @@ fastSpreadPowerNat _ 1 s = s
 fastSpreadPowerNat fuel (S k) s =
   let m = spreadTransferMaxel s
       mPow = fastMaxelPowerNat fuel k 3 m
-      vInit = VM.MkVexel [ (VM.MkUnixel 1, s)
-                         , (VM.MkUnixel 2, intToBoxInt 0)
-                         , (VM.MkUnixel 3, intToBoxInt 1)
-                         ]
-      vFinal = VM.actMaxelVexel mPow vInit
-  in VM.lookupUnixel (VM.MkUnixel 1) vFinal
+      vInit = MkVexel [ (MkUnixel 1, s)
+                      , (MkUnixel 2, intToBoxInt 0)
+                      , (MkUnixel 3, intToBoxInt 1)
+                      ]
+      vFinal = actMaxelVexel mPow vInit
+  in lookupUnixel (MkUnixel 1) vFinal
 
 ||| Verifies fast O(log N) repeated squaring produces identical results to linear hylomorphism:
 ||| Tests S_1, S_2, S_3, S_4 for both s = 1 (orthogonal) and s = 2 (hyperbolic).
@@ -365,8 +361,8 @@ auditGohMaxelSupportCommutationProof =
       m2 = companionMaxelFromPolyDeg 1 p2
       m3 = companionMaxelFromPolyDeg 2 p3
       m5 = companionMaxelFromPolyDeg 4 p5
-      s2 = length (VM.supportMaxel m2)
-      s3 = length (VM.supportMaxel m3)
-      s5 = length (VM.supportMaxel m5)
+      s2 = length (supportMaxel m2)
+      s3 = length (supportMaxel m3)
+      s5 = length (supportMaxel m5)
   in (s2 == 1) && (s3 == 3) && (s5 == 7)
 

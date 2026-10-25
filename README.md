@@ -1,4 +1,20 @@
-# FinSc-Multiset-Transform
+# FinSc-Phase-Unfolding
+
+## Repository layout
+```
+FinSc-Phase-Unfolding/
+├─ .git/
+├─ .gitignore
+├─ FinSc-Phase-Unfolding.ipkg
+├─ pack.toml
+├─ README.md
+├─ build/
+└─ src/
+   ├─ PhaseUnfolding.idr
+   ├─ Stage0/
+   └─ Stage1/
+```
+
 
 [![Idris 2 Verification](https://img.shields.io/badge/Idris_2-0.8.0-blue.svg)](https://www.idris-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)

@@ -5,7 +5,9 @@ import Data.Fin
 import Stage0.BoxInt
 import Stage0.WitnessLedger
 import Stage0.UniverseState
-import Stage1.VexelMaxel
+import Stage1.Carrier.Boxel
+import Stage1.Carrier.Maxel
+import Stage1.Carrier.Vexel
 import Stage1.TypeTheory.TwoLevel
 import Stage1.TypeTheory.Smoothness
 import Stage1.UniverseState
@@ -21,7 +23,7 @@ public export
 record CosmicMultiset where
   constructor MkCosmicMultiset
   visible    : Boxel
-  darkEnergy : Stage1.VexelMaxel.Maxel
+  darkEnergy : Maxel
   darkMatter : Vexel
 
 ||| Calculates total active budget across the direct-sum multiset.

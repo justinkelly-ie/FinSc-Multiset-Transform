@@ -7,7 +7,6 @@ module Stage1.ActiveInference
 import Stage0.BoxInt
 import Stage0.WitnessLedger
 import Stage0.Multiset
-import Stage1.VexelMaxel
 import Stage1.UnixelFraction
 import Stage1.MaxelTransform
 import Stage1.MultisetDuality
@@ -151,7 +150,7 @@ stagedMarkovBlanket i s a e = quote (MkStagedMarkovBlanket i s a e)
 
 ||| QTT 0 Erased Proof Witness: Staged Markov Blanket Invariance
 public export
-0 prfStagedMarkovBlanketRoundtrip : (i, s, a, e : Box t) ->
+0 prfStagedMarkovBlanketRoundtrip : (i, s, a, e : Box elemType) ->
                                    splice (stagedMarkovBlanket i s a e) = MkStagedMarkovBlanket i s a e
 prfStagedMarkovBlanketRoundtrip _ _ _ _ = Refl
 

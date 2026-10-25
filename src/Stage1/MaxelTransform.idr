@@ -3,7 +3,9 @@ module Stage1.MaxelTransform
 import public Stage0.BoxInt
 import public Stage0.Multiset
 import public Stage1.UnixelFraction
-import public Stage1.VexelMaxel
+import public Stage1.Carrier.Maxel
+import public Stage1.Carrier.Vexel
+import public Stage1.Basis.Coordinate
 import public Stage1.MultisetTensor
 import public Stage1.FourGeometries
 import Stage1.MultisetDuality
@@ -98,13 +100,13 @@ stencilTransform sec frac stencils = mkMaxelTransform sec frac stencils
 ||| Constructs a 2-form Gauge Curvature Maxel multiset carrying Electric Field E (pixel [1, 0])
 ||| and Magnetic Flux B (pixel [2, 3]).
 public export
-makeGaugeFieldMaxel : BoxInt -> BoxInt -> Stage1.VexelMaxel.Maxel
+makeGaugeFieldMaxel : BoxInt -> BoxInt -> Maxel
 makeGaugeFieldMaxel e b =
   canonicalizeMaxel (MkMaxel [ (MkPixel 1 0, e), (MkPixel 2 3, b) ])
 
 ||| Computes total electromagnetic energy density Q_EM = E^2 + B^2 directly from a 2-form Maxel.
 public export
-gaugeFieldEnergy : Stage1.VexelMaxel.Maxel -> BoxInt
+gaugeFieldEnergy : Maxel -> BoxInt
 gaugeFieldEnergy m =
   let e = lookupPixel (MkPixel 1 0) m
       b = lookupPixel (MkPixel 2 3) m
@@ -112,7 +114,7 @@ gaugeFieldEnergy m =
 
 ||| Constructs a U(1) / Dihedral Gauge Phase Rotation MaxelTransform mapping field Maxel states.
 public export
-gaugePhaseTransform : MetricSector -> UnixelFraction -> Stage1.VexelMaxel.Maxel -> MaxelTransform Stage1.VexelMaxel.Maxel Stage1.VexelMaxel.Maxel
+gaugePhaseTransform : MetricSector -> UnixelFraction -> Maxel -> MaxelTransform Maxel Maxel
 gaugePhaseTransform sec phase field =
   mkMaxelTransform sec phase [ ((field, field), intToBoxInt 1) ]
 
@@ -194,7 +196,7 @@ actTransformVexel (MkMaxelTransform _ _ (MkBox tPairs)) v =
 
 ||| Direct pushforward action of a MaxelTransform on a 2D Maxel matrix.
 public export
-actTransformMaxel : MaxelTransform Pixel Pixel -> Stage1.VexelMaxel.Maxel -> Stage1.VexelMaxel.Maxel
+actTransformMaxel : MaxelTransform Pixel Pixel -> Maxel -> Maxel
 actTransformMaxel (MkMaxelTransform _ _ (MkBox tPairs)) m =
   let pushedBox = foldl (\acc, ((pSrc, pTgt), wT) =>
                     let wM = lookupPixel pSrc m
@@ -203,14 +205,14 @@ actTransformMaxel (MkMaxelTransform _ _ (MkBox tPairs)) m =
 
 ||| Converts a 2D Maxel matrix directly into a MaxelTransform without passing through raw List pairs.
 public export
-maxelToTransform : MetricSector -> UnixelFraction -> Stage1.VexelMaxel.Maxel -> MaxelTransform Unixel Unixel
+maxelToTransform : MetricSector -> UnixelFraction -> Maxel -> MaxelTransform Unixel Unixel
 maxelToTransform sec frac m =
   let pairs = map (\(MkPixel i j, w) => ((MkUnixel i, MkUnixel j), w)) (maxelPixels m)
   in MkMaxelTransform sec frac (MkBox pairs)
 
 ||| Converts a MaxelTransform back into a canonical 2D Maxel matrix.
 public export
-transformToMaxel : MaxelTransform Unixel Unixel -> Stage1.VexelMaxel.Maxel
+transformToMaxel : MaxelTransform Unixel Unixel -> Maxel
 transformToMaxel (MkMaxelTransform _ _ (MkBox tPairs)) =
   let pxs = map (\((MkUnixel i, MkUnixel j), w) => (MkPixel i j, w)) tPairs
   in mkMaxel pxs

@@ -14,7 +14,7 @@ import Stage1.MultisetDuality
 import Stage0.OnSeq.FusedStream
 import Stage1.TypeTheory.MultisetLevel
 import Stage1.TypeTheory.Staging
-import Stage1.VexelMaxel as VM
+import Stage1.Basis.Coordinate
 import Stage1.Goh.Factor
 import public Stage1.FourGeometries
 
@@ -74,7 +74,7 @@ unfoldGohFactorStreamDeforested (S n) =
 
 ||| Zero-allocation streaming of 2D companion support pixels for prime divisors in the Goh factor tree.
 public export
-gohPrimeSupportStream : (d : Nat) -> FusedStream VM.Pixel
+gohPrimeSupportStream : (d : Nat) -> FusedStream Pixel
 gohPrimeSupportStream 2 = gohFactorSupportStream Factor2
 gohPrimeSupportStream 3 = gohFactorSupportStream Factor3
 gohPrimeSupportStream 5 = gohFactorSupportStream Factor5
@@ -83,7 +83,7 @@ gohPrimeSupportStream _ = stream []
 ||| Unfolds the frequency index n into an allocation-free deforested stream of active 2D companion support pixels.
 ||| Emits pixels directly from static balanced MultisetTree structures via streamMultisetTreeDirect.
 public export
-unfoldGohSupportStreamDeforested : Nat -> FusedStream VM.Pixel
+unfoldGohSupportStreamDeforested : Nat -> FusedStream Pixel
 unfoldGohSupportStreamDeforested n =
   flatMapStream gohPrimeSupportStream (divisorStream n)
 
