@@ -358,8 +358,8 @@ auditGohMaxelSupportCommutationProof =
       m2 = companionMaxelFromPolyDeg 1 p2
       m3 = companionMaxelFromPolyDeg 2 p3
       m5 = companionMaxelFromPolyDeg 4 p5
-      s2 = length (supportMaxel m2)
-      s3 = length (supportMaxel m3)
-      s5 = length (supportMaxel m5)
+      s2 = treeSizeNonZero m2
+      s3 = treeSizeNonZero m3
+      s5 = treeSizeNonZero m5
   in (s2 == 1) && (s3 == 3) && (s5 == 7)
 

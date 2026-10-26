@@ -88,24 +88,6 @@ unfoldGohSupportStreamDeforested n =
   flatMapStream gohPrimeSupportStream (divisorStream n)
 
 
-||| Generates an infinite/fueled deforested stream of Goh multiset spread polynomials S_0, S_1, S_2, ...
-public export
-streamSpreadPolynomials : Fuel -> FusedStream GohMultiset
-streamSpreadPolynomials Dry = stream []
-streamSpreadPolynomials (More f) =
-  let generateSteps : Nat -> List GohMultiset
-      generateSteps k = [ AddFactor (makeGohFactor d) EmptyBag | d <- divisors (S k) ]
-  in stream (concatMap generateSteps [1..38])
-
-||| Generates a structurally total bounded deforested stream of Goh multiset spread polynomials up to bound d.
-||| Structurally total without requiring external Fuel.
-public export
-streamSpreadPolynomialsBounded : (degreeBound : Nat) -> FusedStream GohMultiset
-streamSpreadPolynomialsBounded bound =
-  let generateSteps : Nat -> List GohMultiset
-      generateSteps k = [ AddFactor (makeGohFactor d) EmptyBag | d <- divisors (S k) ]
-  in stream (concatMap generateSteps [1..bound])
-
 ||| Fully deforested, structurally total stream of Goh multiset spread polynomials up to bound d.
 ||| Operates via pure register steppers with zero List allocations.
 public export
@@ -120,6 +102,18 @@ streamSpreadPolynomialsDeforested bound = unfoldStream nextStep (1, 1, bound)
         Yield (AddFactor (makeGohFactor d) EmptyBag) (k, S d, maxK)
       else
         Skip (k, S d, maxK)
+
+||| Generates an infinite/fueled deforested stream of Goh multiset spread polynomials S_0, S_1, S_2, ...
+public export
+streamSpreadPolynomials : Fuel -> FusedStream GohMultiset
+streamSpreadPolynomials Dry = stream []
+streamSpreadPolynomials (More f) = streamSpreadPolynomialsDeforested 38
+
+||| Generates a structurally total bounded deforested stream of Goh multiset spread polynomials up to bound d.
+||| Structurally total without requiring external Fuel. Operates via pure register steppers with zero List allocations.
+public export
+streamSpreadPolynomialsBounded : (degreeBound : Nat) -> FusedStream GohMultiset
+streamSpreadPolynomialsBounded = streamSpreadPolynomialsDeforested
 
 
 ------------------------------------------------------------------------
