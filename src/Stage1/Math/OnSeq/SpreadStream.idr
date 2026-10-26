@@ -4,6 +4,7 @@ import Data.List
 import Data.Vect
 import Data.Nat
 import Data.Fuel
+import Decidable.Equality
 import Stage0.BoxInt
 import Stage0.Multiset
 import Stage1.UnixelFraction
@@ -16,6 +17,8 @@ import Stage1.TypeTheory.MultisetLevel
 import Stage1.TypeTheory.Staging
 import Stage1.Basis.Coordinate
 import Stage1.Goh.Factor
+import Stage1.Goh.SpreadFactorization
+import Stage1.TypeTheory.Smoothness
 import public Stage1.FourGeometries
 
 %default total
@@ -49,6 +52,13 @@ divisorStream (S n) = unfoldStream nextStep (1, S n)
 -- 2. DEFORESTED GOH SPREAD POLYNOMIAL STREAM GENERATORS
 ------------------------------------------------------------------------
 
+||| Maps divisor d to an authentic Cigler-Herbig irreducible spread polynomial factor in a GohMultiset:
+public export
+divFactorToMultiset : Nat -> GohMultiset
+divFactorToMultiset d =
+  let (_ ** f) = ciglerHerbigAuxiliary d
+  in AddFactor f EmptyBag
+
 ||| Constructs an auxiliary Goh polynomial factor Phi_k(s) of degree k.
 public export
 makeGohFactor : (k : Nat) -> GohAuxiliary k
@@ -62,7 +72,7 @@ unfoldGohFactorStream : Nat -> FusedStream GohMultiset
 unfoldGohFactorStream Z = stream []
 unfoldGohFactorStream (S n) =
   let divs = divisors (S n)
-      bags = map (\d => AddFactor (makeGohFactor d) EmptyBag) divs
+      bags = map divFactorToMultiset divs
   in stream bags
 
 ||| Fully deforested unfolding of frequency index n into Goh factors without intermediate List buffers.
@@ -70,14 +80,16 @@ public export
 unfoldGohFactorStreamDeforested : Nat -> FusedStream GohMultiset
 unfoldGohFactorStreamDeforested Z = stream []
 unfoldGohFactorStreamDeforested (S n) =
-  mapStream (\d => AddFactor (makeGohFactor d) EmptyBag) (divisorStream (S n))
+  mapStream divFactorToMultiset (divisorStream (S n))
 
 ||| Zero-allocation streaming of 2D companion support pixels for prime divisors in the Goh factor tree.
+||| Covers all 4 primitive Goh prime gates of the Primorial 210 ground state: p ∈ {2, 3, 5, 7}.
 public export
 gohPrimeSupportStream : (d : Nat) -> FusedStream Pixel
 gohPrimeSupportStream 2 = gohFactorSupportStream Factor2
 gohPrimeSupportStream 3 = gohFactorSupportStream Factor3
 gohPrimeSupportStream 5 = gohFactorSupportStream Factor5
+gohPrimeSupportStream 7 = gohFactorSupportStream Factor7
 gohPrimeSupportStream _ = stream []
 
 ||| Unfolds the frequency index n into an allocation-free deforested stream of active 2D companion support pixels.
@@ -99,15 +111,16 @@ streamSpreadPolynomialsDeforested bound = unfoldStream nextStep (1, 1, bound)
       if k > maxK then Done
       else if d > k then Skip (S k, 1, maxK)
       else if k `mod` d == Z then
-        Yield (AddFactor (makeGohFactor d) EmptyBag) (k, S d, maxK)
+        Yield (divFactorToMultiset d) (k, S d, maxK)
       else
         Skip (k, S d, maxK)
 
 ||| Generates an infinite/fueled deforested stream of Goh multiset spread polynomials S_0, S_1, S_2, ...
+||| bounded structurally by the Observer Epoch (pred (fst dimObserver) = 38).
 public export
 streamSpreadPolynomials : Fuel -> FusedStream GohMultiset
 streamSpreadPolynomials Dry = stream []
-streamSpreadPolynomials (More f) = streamSpreadPolynomialsDeforested 38
+streamSpreadPolynomials (More f) = streamSpreadPolynomialsDeforested (pred (fst dimObserver))
 
 ||| Generates a structurally total bounded deforested stream of Goh multiset spread polynomials up to bound d.
 ||| Structurally total without requiring external Fuel. Operates via pure register steppers with zero List allocations.
