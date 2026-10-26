@@ -3,8 +3,6 @@ module Stage1.MaxelTransform
 import public Stage0.BoxInt
 import public Stage0.Multiset
 import public Stage1.UnixelFraction
-import public Stage1.Carrier.Maxel
-import public Stage1.Carrier.Vexel
 import public Stage1.Basis.Coordinate
 import public Stage1.MultisetTensor
 import public Stage1.FourGeometries
@@ -102,14 +100,14 @@ stencilTransform sec frac stencils = mkMaxelTransform sec frac stencils
 public export
 makeGaugeFieldMaxel : BoxInt -> BoxInt -> Maxel
 makeGaugeFieldMaxel e b =
-  canonicalizeMaxel (MkMaxel [ (mkPixel 1 0, e), (mkPixel 2 3, b) ])
+  canonicalizeCellMultiset (singletonCell (mkCell2 1 0) e <+> singletonCell (mkCell2 2 3) b)
 
 ||| Computes total electromagnetic energy density Q_EM = E^2 + B^2 directly from a 2-form Maxel.
 public export
 gaugeFieldEnergy : Maxel -> BoxInt
 gaugeFieldEnergy m =
-  let e = lookupPixel (mkPixel 1 0) m
-      b = lookupPixel (mkPixel 2 3) m
+  let e = lookupCellMultiset (mkCell2 1 0) m
+      b = lookupCellMultiset (mkCell2 2 3) m
   in addBox (mulBox e e) (mulBox b b)
 
 ||| Constructs a U(1) / Dihedral Gauge Phase Rotation MaxelTransform mapping field Maxel states.
@@ -189,33 +187,34 @@ typedPullback (MkTypedMaxelTransform frac box) macroState =
 public export
 actTransformVexel : MaxelTransform Unixel Unixel -> Vexel -> Vexel
 actTransformVexel (MkMaxelTransform _ _ (MkBox tPairs)) v =
-  let pushedBox = foldl (\acc, ((uSrc, uTgt), wT) =>
-                    let wS = lookupUnixel uSrc v
-                    in insertBoxFast uTgt (mulBox wS wT) acc) emptyBox tPairs
-  in mkVexel (items (consolidateBox pushedBox))
+  foldl (\acc, ((uSrc, uTgt), wT) =>
+    let wS = lookupCellMultiset uSrc v
+    in if boxIsZero (wS * wT) then acc
+       else setBoxTree uTgt (lookupCellMultiset uTgt acc + (wS * wT)) acc) emptyCellMultiset tPairs
 
 ||| Direct pushforward action of a MaxelTransform on a 2D Maxel matrix.
 public export
 actTransformMaxel : MaxelTransform Pixel Pixel -> Maxel -> Maxel
 actTransformMaxel (MkMaxelTransform _ _ (MkBox tPairs)) m =
-  let pushedBox = foldl (\acc, ((pSrc, pTgt), wT) =>
-                    let wM = lookupPixel pSrc m
-                    in insertBoxFast pTgt (mulBox wM wT) acc) emptyBox tPairs
-  in mkMaxel (items (consolidateBox pushedBox))
+  foldl (\acc, ((pSrc, pTgt), wT) =>
+    let wM = lookupCellMultiset pSrc m
+    in if boxIsZero (wM * wT) then acc
+       else setBoxTree pTgt (lookupCellMultiset pTgt acc + (wM * wT)) acc) emptyCellMultiset tPairs
 
 ||| Converts a 2D Maxel matrix directly into a MaxelTransform without passing through raw List pairs.
 public export
 maxelToTransform : MetricSector -> UnixelFraction -> Maxel -> MaxelTransform Unixel Unixel
 maxelToTransform sec frac m =
-  let pairs = map (\(px, w) => ((mkUnixel (pixelRow px), mkUnixel (pixelCol px)), w)) (maxelPixels m)
+  let pairs = foldBoxTreeR (\px, w, acc => ((mkUnixel (pixelRow px), mkUnixel (pixelCol px)), w) :: acc) [] m
   in MkMaxelTransform sec frac (MkBox pairs)
 
 ||| Converts a MaxelTransform back into a canonical 2D Maxel matrix.
 public export
 transformToMaxel : MaxelTransform Unixel Unixel -> Maxel
 transformToMaxel (MkMaxelTransform _ _ (MkBox tPairs)) =
-  let pxs = map (\((u1, u2), w) => (mkPixel (unwrapUnixel u1) (unwrapUnixel u2), w)) tPairs
-  in mkMaxel pxs
+  foldl (\acc, ((u1, u2), w) =>
+    let p = mkCell2 (unwrapUnixel u1) (unwrapUnixel u2)
+    in if boxIsZero w then acc else setBoxTree p (lookupCellMultiset p acc + w) acc) emptyCellMultiset tPairs
 
 ------------------------------------------------------------------------
 -- 5. MAXEL PIXEL FUSION COMPOSITION

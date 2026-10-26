@@ -7,7 +7,6 @@ module Stage1.Multiset.Dynamics
 import Stage0.BoxInt
 import Stage0.WitnessLedger
 import Stage1.UnixelFraction
-import Stage1.Carrier.Vexel
 import Stage1.Basis.Coordinate
 import Stage0.Multiset
 import Stage1.MaxelTransform
@@ -29,33 +28,32 @@ import Data.Fuel
 ||| Extracts physical mass quantity from a focal Vexel multiset node (Unixel 0).
 public export
 multisetMass : Vexel -> BoxInt
-multisetMass v = lookupUnixel (mkUnixel 0) v
+multisetMass v = lookupCellMultiset (mkCell1 0) v
 
 ||| Extracts X-momentum vector quantity from a focal Vexel multiset node (Unixel 1).
 public export
 multisetMomentumX : Vexel -> BoxInt
-multisetMomentumX v = lookupUnixel (mkUnixel 1) v
+multisetMomentumX v = lookupCellMultiset (mkCell1 1) v
 
 ||| Extracts Y-momentum vector quantity from a focal Vexel multiset node (Unixel 2).
 public export
 multisetMomentumY : Vexel -> BoxInt
-multisetMomentumY v = lookupUnixel (mkUnixel 2) v
+multisetMomentumY v = lookupCellMultiset (mkCell1 2) v
 
 ||| Checks if focal Vexel multiset is a boundary node (Unixel 3).
 public export
 isMultisetBoundary : Vexel -> Bool
-isMultisetBoundary v = lookupUnixel (mkUnixel 3) v /= intToBoxInt 0
+isMultisetBoundary v = lookupCellMultiset (mkCell1 3) v /= intToBoxInt 0
 
 ||| Constructs a native Vexel multiset carrying physical multiset quantities.
 export %noinline
 makeMultisetVexel : BoxInt -> BoxInt -> BoxInt -> Bool -> Vexel
 makeMultisetVexel m jx jy isB =
   let bVal = if isB then intToBoxInt 1 else intToBoxInt 0
-  in canonicalizeVexel (MkVexel [ (mkUnixel 0, m)
-                                , (mkUnixel 1, jx)
-                                , (mkUnixel 2, jy)
-                                , (mkUnixel 3, bVal)
-                                ])
+  in canonicalizeCell (singletonCell (mkCell1 0) m <+>
+                       singletonCell (mkCell1 1) jx <+>
+                       singletonCell (mkCell1 2) jy <+>
+                       singletonCell (mkCell1 3) bVal)
 
 ||| Initial baseline multiset state as a Vexel payload
 export %noinline
@@ -143,7 +141,7 @@ multisetToMacroNode u = case unwrapUnixel u of
 export %noinline
 zoomOutMultisetGrid : Vexel -> Multiset BoxInt MacroGridNode
 zoomOutMultisetGrid v =
-  foldBoxTreeL (\acc, (u, w) => insertItem (multisetToMacroNode u) w acc) ZeroM (vexelToBoxTree v)
+  foldBoxTreeL (\acc, (u, w) => insertItem (multisetToMacroNode u) w acc) ZeroM v
 
 ||| Audits multiset grid coarse-graining invariants.
 export

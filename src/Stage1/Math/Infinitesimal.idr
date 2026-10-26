@@ -2,7 +2,6 @@ module Stage1.Math.Infinitesimal
 
 import Stage0.BoxInt
 import Stage0.WitnessLedger
-import Stage1.Carrier.Maxel
 import Stage1.Basis.Coordinate
 import Stage1.MultisetTree
 import Stage1.Polynumber
@@ -17,7 +16,7 @@ import Stage1.Polynumber
 ||| Defined as the single basis Pixel [1, 2] with unit weight.
 public export
 epsilon : Maxel
-epsilon = MkMaxelTree (BoxNode 1 BoxLeaf (mkPixel 1 2) (intToBoxInt 1) BoxLeaf)
+epsilon = singletonCell (mkCell2 1 2) (intToBoxInt 1)
 
 ||| Multiplication rule for the infinitesimal token: ε * ε = 0.
 ||| Computed purely via pixel multiset contraction [1, 2] * [1, 2] => [].
@@ -34,20 +33,17 @@ mulEpsilon e1 e2 = mulMaxel e1 e2
 public export
 dualNumber : (realPart : BoxInt) -> (epsPart : BoxInt) -> Maxel
 dualNumber r i =
-  MkMaxelTree (BoxNode 2
-                 (BoxNode 1 BoxLeaf (mkPixel 1 1) r BoxLeaf)
-                 (mkPixel 1 2) i
-                 (BoxNode 1 BoxLeaf (mkPixel 2 2) r BoxLeaf))
+  singletonCell (mkCell2 1 1) r <+> singletonCell (mkCell2 1 2) i <+> singletonCell (mkCell2 2 2) r
 
 ||| Extracts the real scalar part of a Dual Number Maxel.
 public export
 dualReal : Maxel -> BoxInt
-dualReal m = lookupPixel (mkPixel 1 1) m
+dualReal m = lookupCellMultiset (mkCell2 1 1) m
 
 ||| Extracts the nilpotent velocity / derivative part of a Dual Number Maxel.
 public export
 dualEps : Maxel -> BoxInt
-dualEps m = lookupPixel (mkPixel 1 2) m
+dualEps m = lookupCellMultiset (mkCell2 1 2) m
 
 ||| Multiplies two dual numbers via standard Maxel multiset multiplication.
 ||| (r1 + i1 ε)(r2 + i2 ε) = r1*r2 + (r1*i2 + i1*r2)ε because ε² = 0.
@@ -58,12 +54,12 @@ mulDual d1 d2 = mulMaxel d1 d2
 ||| Adds two dual numbers using Maxel addition.
 public export
 addDual : Maxel -> Maxel -> Maxel
-addDual d1 d2 = addMaxel d1 d2
+addDual d1 d2 = addCellMultiset d1 d2
 
 ||| Scales a dual number by a BoxInt scalar.
 public export
 scaleDual : BoxInt -> Maxel -> Maxel
-scaleDual s d = scaleMaxel s d
+scaleDual s d = scaleCellMultiset s d
 
 ------------------------------------------------------------------------
 -- 3. DISCRETE AUTOMATIC DIFFERENTIATION VIA DUAL NUMBER MAXELS

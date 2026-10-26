@@ -5,9 +5,7 @@ import Data.Fin
 import Stage0.BoxInt
 import Stage0.WitnessLedger
 import Stage0.UniverseState
-import Stage1.Carrier.Boxel
-import Stage1.Carrier.Maxel
-import Stage1.Carrier.Vexel
+import Stage1.Basis.Coordinate
 import Stage1.TypeTheory.TwoLevel
 import Stage1.TypeTheory.Smoothness
 import Stage1.UniverseState
@@ -30,16 +28,24 @@ record CosmicMultiset where
 public export
 totalCosmicMultisetBudget : CosmicMultiset -> Nat
 totalCosmicMultisetBudget (MkCosmicMultiset vm de dm) =
-  length (voxels vm) + length (maxelPixels de) + length (vexelTerms dm)
+  foldBoxTreeL (\acc, _ => S acc) 0 vm +
+  foldBoxTreeL (\acc, _ => S acc) 0 de +
+  foldBoxTreeL (\acc, _ => S acc) 0 dm
 
 ||| Embeds a Stage0 UniverseState into the CosmicMultiset.
 public export
 stateToCosmicMultiset : {vm, de, dm : Nat} -> Stage0.UniverseState.UniverseState vm de dm -> CosmicMultiset
 stateToCosmicMultiset (MkUniverseState vmVect deVect dmVect) =
-  let vmTerms = toList (tabulate (\idx => (mkVoxel (finToNat idx + 1) 1 1, index idx vmVect)))
-      deTerms = toList (tabulate (\idx => (mkPixel (finToNat idx + 1) 1, index idx deVect)))
-      dmTerms = toList (tabulate (\idx => (mkUnixel (finToNat idx + 1), index idx dmVect)))
-  in MkCosmicMultiset (canonicalizeBoxel (MkBoxel vmTerms)) (mkMaxel deTerms) (mkVexel dmTerms)
+  let vmTree = foldVectWithFin (\idx, w, acc => if boxIsZero w then acc else setBoxTree (mkCell3 (finToNat idx + 1) 1 1) w acc) BoxLeaf vmVect
+      deTree = foldVectWithFin (\idx, w, acc => if boxIsZero w then acc else setBoxTree (mkCell2 (finToNat idx + 1) 1) w acc) BoxLeaf deVect
+      dmTree = foldVectWithFin (\idx, w, acc => if boxIsZero w then acc else setBoxTree (mkCell1 (finToNat idx + 1)) w acc) BoxLeaf dmVect
+  in MkCosmicMultiset vmTree deTree dmTree
+  where
+    foldVectWithFin : {n : Nat} -> (Fin n -> a -> acc -> acc) -> acc -> Vect n a -> acc
+    foldVectWithFin {n = Z} _ init [] = init
+    foldVectWithFin {n = S k} f init (x :: xs) =
+      let acc' = f FZ x init
+      in foldVectWithFin (\fin, v, a => f (FS fin) v a) acc' xs
 
 ------------------------------------------------------------------------
 -- 2LTT SUBFIBRATION STATE STRATIFICATION & QTT 0 BUDGET CONSERVATION

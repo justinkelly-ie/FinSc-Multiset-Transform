@@ -6,8 +6,6 @@ import Stage0.StructuralFuel
 import Stage0.OnSeq.FusedStream as FS
 import Stage0.StreamPolynumber
 import Stage1.ConjugateHylo
-import Stage1.Carrier.Maxel
-import Stage1.Carrier.Vexel
 import Stage1.Basis.Coordinate
 import Stage1.VexelStream as VS
 import Stage1.Goh.Factor
@@ -34,10 +32,10 @@ import Stage1.MultisetTree
 public export
 companionMaxel2D : BoxInt -> BoxInt -> Maxel
 companionMaxel2D c0 c1 =
-  let baseShift = [(mkPixel 2 1, intToBoxInt 1)]
-      c0Edge = if boxIsZero c0 then [] else [(mkPixel 1 2, c0)]
-      c1Edge = if boxIsZero c1 then [] else [(mkPixel 2 2, c1)]
-  in MkMaxel (baseShift ++ c0Edge ++ c1Edge)
+  let baseShift = singletonCell (mkCell2 2 1) (intToBoxInt 1)
+      c0Edge = if boxIsZero c0 then emptyCellMultiset else singletonCell (mkCell2 1 2) c0
+      c1Edge = if boxIsZero c1 then emptyCellMultiset else singletonCell (mkCell2 2 2) c1
+  in baseShift <+> c0Edge <+> c1Edge
 
 ||| Natural transformation eta from a quadratic StreamPolynumber to its 2D companion Maxel.
 ||| Extracts the c0 (degree 0) and c1 (degree 1) coefficients from the sparse stream.
@@ -56,23 +54,26 @@ companionMaxelFromPoly p =
 ||| Rightmost column entries [k+1, N] have weight coeffs[k] for 0 <= k < N.
 public export
 companionMaxelND : (n : Nat) -> (coeffs : Vect n BoxInt) -> Maxel
-companionMaxelND Z [] = MkMaxel []
+companionMaxelND Z [] = emptyCellMultiset
 companionMaxelND (S Z) [c0] =
   if boxIsZero c0
-     then MkMaxel []
-     else MkMaxel [(mkPixel 1 1, c0)]
+     then emptyCellMultiset
+     else singletonCell (mkCell2 1 1) c0
 companionMaxelND (S (S k)) coeffs =
   let dim = S (S k)
-      subDiag = map (\i => (mkPixel (i + 2) (i + 1), intToBoxInt 1)) (the (List Nat) [0..k])
-      colEntries = filterMap (\(i, c) => if boxIsNonZero c then Just (mkPixel (i + 1) dim, c) else Nothing)
-                             (zip (the (List Nat) [0..(S k)]) (toList coeffs))
-  in MkMaxel (subDiag ++ colEntries)
-  where
-    filterMap : (a -> Maybe b) -> List a -> List b
-    filterMap _ [] = []
-    filterMap f (x :: xs) = case f x of
-                              Just y => y :: filterMap f xs
-                              Nothing => filterMap f xs
+      subDiag : (i : Nat) -> (count : Nat) -> Maxel -> Maxel
+      subDiag _ Z acc = acc
+      subDiag i (S rem) acc =
+        subDiag (S i) rem (setBoxTree (mkCell2 (i + 2) (i + 1)) (intToBoxInt 1) acc)
+      colEntries : (i : Nat) -> Vect len BoxInt -> Maxel -> Maxel
+      colEntries _ [] acc = acc
+      colEntries i (c :: cs) acc =
+        let acc' = if boxIsNonZero c
+                     then setBoxTree (mkCell2 (i + 1) dim) c acc
+                     else acc
+        in colEntries (S i) cs acc'
+      tSub = subDiag 0 (S k) emptyCellMultiset
+  in colEntries 0 coeffs tSub
 
 ||| Looks up the coefficient for a specific degree in an unfolded term list.
 public export
@@ -133,12 +134,12 @@ spreadTransferMaxel s =
   let w11 = subBox (intToBoxInt 2) (mulBox (intToBoxInt 4) s)
       w12 = intToBoxInt (-1)
       w13 = mulBox (intToBoxInt 2) s
-      e11 = [(mkPixel 1 1, w11)]
-      e12 = [(mkPixel 1 2, w12)]
-      e13 = if boxIsZero w13 then [] else [(mkPixel 1 3, w13)]
-      e21 = [(mkPixel 2 1, intToBoxInt 1)]
-      e33 = [(mkPixel 3 3, intToBoxInt 1)]
-  in MkMaxel (e11 ++ e12 ++ e13 ++ e21 ++ e33)
+      e11 = singletonCell (mkCell2 1 1) w11
+      e12 = singletonCell (mkCell2 1 2) w12
+      e13 = if boxIsZero w13 then emptyCellMultiset else singletonCell (mkCell2 1 3) w13
+      e21 = singletonCell (mkCell2 2 1) (intToBoxInt 1)
+      e33 = singletonCell (mkCell2 3 3) (intToBoxInt 1)
+  in e11 <+> e12 <+> e13 <+> e21 <+> e33
 
 ||| Applies the 3x3 Spread Transfer Maxel to an affine state triple (S_n, S_{n-1}, 1).
 ||| Computes the successor state (S_{n+1}, S_n, 1) in exact BoxInt coordinates.
@@ -191,9 +192,9 @@ spreadRecurrenceHyloFuelModel fuel = spreadRecurrenceHyloNat (gohSteps fuel)
 ||| Constructs canonical identity Maxel for small dimensions.
 public export
 identityMaxelDim : Nat -> Maxel
-identityMaxelDim 2 = MkMaxel [ (mkPixel 1 1, intToBoxInt 1), (mkPixel 2 2, intToBoxInt 1) ]
-identityMaxelDim 3 = MkMaxel [ (mkPixel 1 1, intToBoxInt 1), (mkPixel 2 2, intToBoxInt 1), (mkPixel 3 3, intToBoxInt 1) ]
-identityMaxelDim _ = MkMaxel [ (mkPixel 1 1, intToBoxInt 1) ]
+identityMaxelDim 2 = singletonCell (mkCell2 1 1) (intToBoxInt 1) <+> singletonCell (mkCell2 2 2) (intToBoxInt 1)
+identityMaxelDim 3 = singletonCell (mkCell2 1 1) (intToBoxInt 1) <+> singletonCell (mkCell2 2 2) (intToBoxInt 1) <+> singletonCell (mkCell2 3 3) (intToBoxInt 1)
+identityMaxelDim _ = singletonCell (mkCell2 1 1) (intToBoxInt 1)
 
 ||| Fast logarithmic binary exponentiation for Maxel operators (Rule 04).
 ||| Computes M^exp in O(log exp) steps via repeated squaring of consolidated Maxels.
@@ -223,12 +224,10 @@ fastSpreadPower _ 1 s = s
 fastSpreadPower fuel (S k) s =
   let m = spreadTransferMaxel s
       mPow = fastMaxelPower fuel k 3 m
-      vInit = MkVexel [ (mkUnixel 1, s)
-                      , (mkUnixel 2, intToBoxInt 0)
-                      , (mkUnixel 3, intToBoxInt 1)
-                      ]
+      vInit = singletonCell (mkCell1 1) s <+>
+              singletonCell (mkCell1 3) (intToBoxInt 1)
       vFinal = actMaxelVexel mPow vInit
-  in lookupUnixel (mkUnixel 1) vFinal
+  in lookupCellMultiset (mkCell1 1) vFinal
 
 ------------------------------------------------------------------------
 -- 4. COMPILE-TIME INVARIANT AUDITS (RULE 01)
@@ -299,12 +298,10 @@ fastSpreadPowerNat _ 1 s = s
 fastSpreadPowerNat fuel (S k) s =
   let m = spreadTransferMaxel s
       mPow = fastMaxelPowerNat fuel k 3 m
-      vInit = MkVexel [ (mkUnixel 1, s)
-                      , (mkUnixel 2, intToBoxInt 0)
-                      , (mkUnixel 3, intToBoxInt 1)
-                      ]
+      vInit = singletonCell (mkCell1 1) s <+>
+              singletonCell (mkCell1 3) (intToBoxInt 1)
       vFinal = actMaxelVexel mPow vInit
-  in lookupUnixel (mkUnixel 1) vFinal
+  in lookupCellMultiset (mkCell1 1) vFinal
 
 ||| Verifies fast O(log N) repeated squaring produces identical results to linear hylomorphism:
 ||| Tests S_1, S_2, S_3, S_4 for both s = 1 (orthogonal) and s = 2 (hyperbolic).

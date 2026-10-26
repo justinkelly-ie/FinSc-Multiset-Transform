@@ -1,7 +1,7 @@
 module Stage1.MaxelStaging
 
 import Stage0.BoxInt
-import Stage1.Carrier.Maxel
+import Stage1.Basis.Coordinate
 import Stage1.TypeTheory.Staging
 import Stage1.TypeTheory.TwoLevel
 import Data.Vect
@@ -27,23 +27,23 @@ prfStagedMaxelMul _ _ = Refl
 ||| 2LTT Staged Maxel Addition: Concatenates pixel multisets at Stage 1.
 %inline public export
 stagedMaxelAdd : Lift Maxel -> Lift Maxel -> Maxel
-stagedMaxelAdd m1 m2 = addMaxel (splice m1) (splice m2)
+stagedMaxelAdd m1 m2 = addCellMultiset (splice m1) (splice m2)
 
 ||| QTT 0 Erased Proof Witness: Staged Maxel Addition Invariant
 public export
 0 prfStagedMaxelAdd : (m1 : Maxel) -> (m2 : Maxel) ->
-                      stagedMaxelAdd (quote m1) (quote m2) = addMaxel m1 m2
+                      stagedMaxelAdd (quote m1) (quote m2) = addCellMultiset m1 m2
 prfStagedMaxelAdd _ _ = Refl
 
 ||| 2LTT Staged Maxel Scalar Scaling.
 %inline public export
 stagedMaxelScale : Lift BoxInt -> Lift Maxel -> Maxel
-stagedMaxelScale s m = scaleMaxel (splice s) (splice m)
+stagedMaxelScale s m = scaleCellMultiset (splice s) (splice m)
 
 ||| QTT 0 Erased Proof Witness: Staged Maxel Scaling Invariant
 public export
 0 prfStagedMaxelScale : (s : BoxInt) -> (m : Maxel) ->
-                        stagedMaxelScale (quote s) (quote m) = scaleMaxel s m
+                        stagedMaxelScale (quote s) (quote m) = scaleCellMultiset s m
 prfStagedMaxelScale _ _ = Refl
 
 ||| 2LTT Staged Matrix-Vector Contraction (actMaxelVexel).
@@ -60,23 +60,23 @@ prfStagedActMaxelVexel _ _ = Refl
 ||| 2LTT Staged Maxel Canonicalization: Aggregates duplicates and eliminates zero-weight entries.
 %inline public export
 stagedCanonicalizeMaxel : Lift Maxel -> Maxel
-stagedCanonicalizeMaxel m = canonicalizeMaxel (splice m)
+stagedCanonicalizeMaxel m = canonicalizeCellMultiset (splice m)
 
 ||| QTT 0 Erased Proof Witness: Staged Canonicalization Invariant
 public export
 0 prfStagedCanonicalizeMaxel : (m : Maxel) ->
-                               stagedCanonicalizeMaxel (quote m) = canonicalizeMaxel m
+                               stagedCanonicalizeMaxel (quote m) = canonicalizeCellMultiset m
 prfStagedCanonicalizeMaxel _ = Refl
 
 ||| 2LTT Staged Total Weight Evaluation.
 %inline public export
 stagedTotalMaxelWeight : Lift Maxel -> BoxInt
-stagedTotalMaxelWeight m = totalMaxelWeight (splice m)
+stagedTotalMaxelWeight m = totalCellMultisetWeight (splice m)
 
 ||| QTT 0 Erased Proof Witness: Staged Weight Invariant
 public export
 0 prfStagedTotalMaxelWeight : (m : Maxel) ->
-                              stagedTotalMaxelWeight (quote m) = totalMaxelWeight m
+                              stagedTotalMaxelWeight (quote m) = totalCellMultisetWeight m
 prfStagedTotalMaxelWeight _ = Refl
 
 ------------------------------------------------------------------------
@@ -104,11 +104,11 @@ stagedMatrixPower fuel mat exp = stagedFastMatPower fuel (splice mat) exp
 public export
 vect2x2ToMaxel : Vect 2 (Vect 2 BoxInt) -> Maxel
 vect2x2ToMaxel [[m11, m12], [m21, m22]] =
-  let p11 = (mkPixel 1 1, m11)
-      p12 = (mkPixel 1 2, m12)
-      p21 = (mkPixel 2 1, m21)
-      p22 = (mkPixel 2 2, m22)
-  in canonicalizeMaxel (MkMaxel [p11, p12, p21, p22])
+  let p11 = singletonCell (mkCell2 1 1) m11
+      p12 = singletonCell (mkCell2 1 2) m12
+      p21 = singletonCell (mkCell2 2 1) m21
+      p22 = singletonCell (mkCell2 2 2) m22
+  in canonicalizeCellMultiset (p11 <+> p12 <+> p21 <+> p22)
 
 ||| Staged 2x2 companion Maxel multiplication evaluating straight-line scalar dot products:
 public export

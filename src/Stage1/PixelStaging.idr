@@ -2,7 +2,6 @@ module Stage1.PixelStaging
 
 import Stage0.Pixel
 import Stage1.Basis.Coordinate
-import Stage1.Carrier.Maxel
 import Stage1.TypeTheory.Staging
 import Stage1.TypeTheory.TwoLevel
 
