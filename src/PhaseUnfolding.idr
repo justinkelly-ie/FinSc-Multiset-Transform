@@ -11,6 +11,7 @@ import public Stage1.Goh
 import public Stage1.Goh.Factor
 import public Stage1.Goh.Combinator
 import public Stage1.Goh.Functor
+import public Stage1.Goh.SpreadFactorization
 import public Stage1.MaxelTransform
 import public Stage1.MaxelPolyBridge
 import public Stage1.ScaleHierarchy
