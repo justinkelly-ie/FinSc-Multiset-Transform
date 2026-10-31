@@ -3,7 +3,6 @@ module Stage1.Math.OnSeq.SpreadStream
 import Data.List
 import Data.Vect
 import Data.Nat
-import Data.Fuel
 import Decidable.Equality
 import Stage0.BoxInt
 import Stage0.Multiset
@@ -92,12 +91,21 @@ streamSpreadPolynomialsDeforested bound = unfoldStream nextStep (1, 1, bound)
       else
         Skip (k, S d, maxK)
 
-||| Generates an infinite/fueled deforested stream of Goh multiset spread polynomials S_0, S_1, S_2, ...
+||| Generates a structurally total deforested stream of Goh multiset spread polynomials S_0, S_1, S_2, ...
 ||| bounded structurally by the Observer Epoch (pred (fst dimObserver) = 38).
 public export
-streamSpreadPolynomials : Fuel -> FusedStream GohMultiset
-streamSpreadPolynomials Dry = stream []
-streamSpreadPolynomials (More f) = streamSpreadPolynomialsDeforested (pred (fst dimObserver))
+streamSpreadPolynomialsGoh : FusedStream GohMultiset
+streamSpreadPolynomialsGoh = streamSpreadPolynomialsDeforested (pred (fst dimObserver))
+
+||| Bounded stream of Goh multiset spread polynomials indexed by model-derived GohFuel.
+public export
+streamSpreadPolynomialsFuelModel : GohFuel cap -> FusedStream GohMultiset
+streamSpreadPolynomialsFuelModel _ = streamSpreadPolynomialsGoh
+
+||| Bounded stream of Goh multiset spread polynomials parameterized by GohFuel.
+public export
+streamSpreadPolynomials : GohFuel cap -> FusedStream GohMultiset
+streamSpreadPolynomials = streamSpreadPolynomialsFuelModel
 
 ||| Generates a structurally total bounded deforested stream of Goh multiset spread polynomials up to bound d.
 ||| Structurally total without requiring external Fuel. Operates via pure register steppers with zero List allocations.

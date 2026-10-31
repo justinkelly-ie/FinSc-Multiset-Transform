@@ -16,6 +16,8 @@ import Stage0.OnSeq.FusedStream
 import Stage0.StreamPolynumber
 import Stage1.Polynumber
 import Stage1.TypeTheory.Staging
+import Stage1.MultisetTree
+import Stage1.Basis.Coordinate
 
 %default total
 
@@ -590,6 +592,68 @@ stagedAddFactorM qFactor qM qBag = quote (AddFactorM (splice qFactor) (splice qM
 public export
 0 prfStagedGohRoundtrip : {deg : Nat} -> (p : GohAuxiliary deg) -> splice (stagedGohPsi p) = p
 prfStagedGohRoundtrip _ = Refl
+
+--------------------------------------------------------------------------------
+-- 6. GOH MULTISET COMPANION SUPPORT TREES & DIRECT SUM ALGEBRA (RULE 03 & 04)
+--------------------------------------------------------------------------------
+
+||| Extracts the companion support pixels for an arbitrary GohAuxiliary factor of degree deg.
+||| Emits subdiagonal shift pixels (r+1, r) and non-zero feedback column pixels (r+1, deg).
+public export
+gohAuxiliarySupportTree : {deg : Nat} -> GohAuxiliary deg -> MultisetTree Pixel
+gohAuxiliarySupportTree {deg = Z} _ = Leaf
+gohAuxiliarySupportTree {deg = (S Z)} (Phi coeffs) =
+  let c0 = head coeffs
+  in if boxIsZero c0.num then Leaf else Node 1 Leaf (mkPixel 1 1) 1 Leaf
+gohAuxiliarySupportTree {deg = (S (S k))} (Phi coeffs) =
+  let subdiag = buildSubdiag (S k)
+      feedback = buildFeedback 0 coeffs
+  in subdiag <+> feedback
+  where
+    buildSubdiag : Nat -> MultisetTree Pixel
+    buildSubdiag Z = Leaf
+    buildSubdiag (S m) =
+      insertTokenTree (mkPixel (S (S m)) (S m)) 1 (buildSubdiag m)
+
+    buildFeedback : Nat -> Vect n UnixelFraction -> MultisetTree Pixel
+    buildFeedback _ [] = Leaf
+    buildFeedback r (c :: cs) =
+      if r >= S (S k)
+         then Leaf
+         else let rest = buildFeedback (S r) cs
+              in if boxIsZero c.num
+                    then rest
+                    else insertTokenTree (mkPixel (S r) (S (S k))) 1 rest
+
+||| Direct sum of GohAuxiliary companion trees across a GohMultiset ledger.
+||| Offsets each subsequent factor along the diagonal by the accumulated degree sum.
+public export
+gohMultisetSupportTreeOffset : Nat -> GohMultiset -> MultisetTree Pixel
+gohMultisetSupportTreeOffset _ EmptyBag = Leaf
+gohMultisetSupportTreeOffset offset (AddFactor {deg} f rest) =
+  let treeF = shiftSupportTree offset (gohAuxiliarySupportTree f)
+      restTree = gohMultisetSupportTreeOffset (offset + deg) rest
+  in treeF <+> restTree
+gohMultisetSupportTreeOffset offset (AddFactorM {deg} f m rest) =
+  let count = boxNatToNat m
+      (blockTree, newOffset) = repeatDirectSum offset count
+      restTree = gohMultisetSupportTreeOffset newOffset rest
+  in blockTree <+> restTree
+  where
+    repeatDirectSum : Nat -> Nat -> (MultisetTree Pixel, Nat)
+    repeatDirectSum off Z = (Leaf, off)
+    repeatDirectSum off (S countRem) =
+      let thisTree = shiftSupportTree off (gohAuxiliarySupportTree f)
+          (restSum, endOff) = repeatDirectSum (off + deg) countRem
+      in (thisTree <+> restSum, endOff)
+
+||| O(log N) AVL MultisetTree representation of the companion support pixels
+||| for an entire GohMultiset factorization tree.
+||| Forms the block-diagonal direct sum across all active factors.
+public export
+gohMultisetSupportTree : GohMultiset -> MultisetTree Pixel
+gohMultisetSupportTree = gohMultisetSupportTreeOffset 0
+
 
 
 
