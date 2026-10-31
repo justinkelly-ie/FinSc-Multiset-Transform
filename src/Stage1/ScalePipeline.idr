@@ -278,30 +278,30 @@ tTotalFunctorialPipeline = tCondensedMatterPipeline
 -- 7b. TYPE-SAFE SCALE FUNCTOR REPRESENTATIONS
 ------------------------------------------------------------------------
 
-||| Type-level ScaleFunctor stage 1: Subatomic -> Hadron
+||| Type-level ScaleTransition stage 1: Subatomic -> Hadron
 public export
-sf1_QuarkToHadron : ScaleFunctor SubatomicLevel HadronLevel ColorCharge HadronToken
-sf1_QuarkToHadron = MkScaleFunctor t1_QuarkToHadron
+sf1_QuarkToHadron : ScaleTransition SubatomicLevel HadronLevel ColorCharge HadronToken
+sf1_QuarkToHadron = MkScaleTransition t1_QuarkToHadron
 
-||| Type-level ScaleFunctor stage 2: Hadron -> Atom
+||| Type-level ScaleTransition stage 2: Hadron -> Atom
 public export
-sf2_HadronToAtom : ScaleFunctor HadronLevel AtomLevel HadronToken AtomToken
-sf2_HadronToAtom = MkScaleFunctor t2_HadronToAtom
+sf2_HadronToAtom : ScaleTransition HadronLevel AtomLevel HadronToken AtomToken
+sf2_HadronToAtom = MkScaleTransition t2_HadronToAtom
 
-||| Type-level ScaleFunctor stage 3: Atom -> Molecule
+||| Type-level ScaleTransition stage 3: Atom -> Molecule
 public export
-sf3_AtomToMolecule : ScaleFunctor AtomLevel MoleculeLevel AtomToken MoleculeToken
-sf3_AtomToMolecule = MkScaleFunctor t3_AtomToMolecule
+sf3_AtomToMolecule : ScaleTransition AtomLevel MoleculeLevel AtomToken MoleculeToken
+sf3_AtomToMolecule = MkScaleTransition t3_AtomToMolecule
 
-||| Type-level ScaleFunctor stage 4: Molecule -> Cell
+||| Type-level ScaleTransition stage 4: Molecule -> Cell
 public export
-sf4_MoleculeToBiomodule : ScaleFunctor MoleculeLevel CellLevel MoleculeToken BiomoduleToken
-sf4_MoleculeToBiomodule = MkScaleFunctor t4_MoleculeToBiomodule
+sf4_MoleculeToBiomodule : ScaleTransition MoleculeLevel CellLevel MoleculeToken BiomoduleToken
+sf4_MoleculeToBiomodule = MkScaleTransition t4_MoleculeToBiomodule
 
-||| End-to-End Type-Safe ScaleFunctor Pipeline: Subatomic -> Cell
+||| End-to-End Type-Safe ScaleTransition Pipeline: Subatomic -> Cell
 public export
-sfTotalFunctorialPipeline : ScaleFunctor SubatomicLevel CellLevel ColorCharge BiomoduleToken
-sfTotalFunctorialPipeline = MkScaleFunctor tTotalFunctorialPipeline
+sfTotalFunctorialPipeline : ScaleTransition SubatomicLevel CellLevel ColorCharge BiomoduleToken
+sfTotalFunctorialPipeline = MkScaleTransition tTotalFunctorialPipeline
 
 ------------------------------------------------------------------------
 -- 8. PIPELINE APPLICATION OPERATOR, DEFORESTED SCALE CHAIN & INVARIANT AUDIT

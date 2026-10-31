@@ -57,38 +57,3 @@ stagedScaleTransition : {src, tgt : ScaleLevel} ->
                         ScaleTransition src tgt srcToken tgtToken
 stagedScaleTransition qM = MkScaleTransition (splice qM)
 
-------------------------------------------------------------------------
--- BACKWARDS COMPATIBILITY ALIASES FOR CATEGORY-THEORETIC NAMES
-------------------------------------------------------------------------
-
-||| @deprecated ScaleFunctor record preserved for 100% backwards compatibility with pattern matches.
-||| Use ScaleTransition for new 2LTT code.
-public export
-record ScaleFunctor (src : ScaleLevel) (tgt : ScaleLevel) (srcToken : Type) (tgtToken : Type) where
-  constructor MkScaleFunctor
-  transform : MaxelTransform srcToken tgtToken
-
-public export
-toScaleTransition : ScaleFunctor src tgt a b -> ScaleTransition src tgt a b
-toScaleTransition (MkScaleFunctor t) = MkScaleTransition t
-
-public export
-fromScaleTransition : ScaleTransition src tgt a b -> ScaleFunctor src tgt a b
-fromScaleTransition (MkScaleTransition t) = MkScaleFunctor t
-
-||| @deprecated Use identityScaleTransition.
-public export
-identityScaleFunctor : {0 srcToken : Type} -> ScaleFunctor src src srcToken srcToken
-identityScaleFunctor = MkScaleFunctor (mkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxInt 1) 1) [])
-
-||| @deprecated Use composeScaleTransitions.
-public export
-composeScaleFunctors : {0 a, b, c : ScaleLevel} ->
-                       {0 tokA, tokB, tokC : Type} ->
-                       (Eq tokA, Eq tokB, Eq tokC) =>
-                       ScaleFunctor a b tokA tokB ->
-                       ScaleFunctor b c tokB tokC ->
-                       ScaleFunctor a c tokA tokC
-composeScaleFunctors (MkScaleFunctor f) (MkScaleFunctor g) =
-  MkScaleFunctor (composeMaxels f g)
-

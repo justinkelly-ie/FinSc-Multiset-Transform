@@ -190,13 +190,6 @@ cyclotomicPixelHylo deg foldFn initVal =
   let pxStrm = unfoldGohSupportStreamDeforested deg
   in foldStreamNat (deg * 10 + 10) (\acc, px => foldFn px acc) initVal pxStrm
 
-||| Backward-compatible alias for cyclotomicPixelHylo.
-public export
-cyclotomicMultisetHylo : (degree : Nat) ->
-                         (Pixel -> b -> b) ->
-                         b -> b
-cyclotomicMultisetHylo = cyclotomicPixelHylo
-
 ||| Cyclotomic Support Hylomorphism:
 ||| Folds active totient degree support terms directly from the cyclotomic divisor stream.
 public export
