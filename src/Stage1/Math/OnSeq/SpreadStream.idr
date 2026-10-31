@@ -63,10 +63,10 @@ unfoldGohFactorStreamDeforested (S n) =
 ||| Covers all 4 primitive Goh prime gates of the Primorial 210 ground state: p ∈ {2, 3, 5, 7}.
 public export
 gohPrimeSupportStream : (d : Nat) -> FusedStream Pixel
-gohPrimeSupportStream 2 = gohFactorSupportStream Factor2
-gohPrimeSupportStream 3 = gohFactorSupportStream Factor3
-gohPrimeSupportStream 5 = gohFactorSupportStream Factor5
-gohPrimeSupportStream 7 = gohFactorSupportStream Factor7
+gohPrimeSupportStream 2 = gohFactorSupportStream (gohFactor 2)
+gohPrimeSupportStream 3 = gohFactorSupportStream (gohFactor 3)
+gohPrimeSupportStream 5 = gohFactorSupportStream (gohFactor 5)
+gohPrimeSupportStream 7 = gohFactorSupportStream (gohFactor 7)
 gohPrimeSupportStream _ = stream []
 
 ||| Unfolds the frequency index n into an allocation-free deforested stream of active 2D companion support pixels.

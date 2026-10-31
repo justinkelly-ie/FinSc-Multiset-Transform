@@ -347,14 +347,14 @@ auditFastSpreadPowerNatEquivalenceProof =
      (hf1 == hh1) && (hf2 == hh2)
 
 ||| Verifies the Support Commutation Theorem across irreducible prime factors:
-||| For P = Factor2, Factor3, Factor5, the 2D companion Maxel support size
+||| For P = gohFactor 2, gohFactor 3, gohFactor 5, the 2D companion Maxel support size
 ||| strictly matches the predicted values 1, 3, 7.
 public export
 auditGohMaxelSupportCommutationProof : Bool
 auditGohMaxelSupportCommutationProof =
-  let p2 = gohFactorToStreamPoly Factor2
-      p3 = gohFactorToStreamPoly Factor3
-      p5 = gohFactorToStreamPoly Factor5
+  let p2 = gohFactorToStreamPoly (gohFactor 2)
+      p3 = gohFactorToStreamPoly (gohFactor 3)
+      p5 = gohFactorToStreamPoly (gohFactor 5)
       m2 = companionMaxelFromPolyDeg 1 p2
       m3 = companionMaxelFromPolyDeg 2 p3
       m5 = companionMaxelFromPolyDeg 4 p5

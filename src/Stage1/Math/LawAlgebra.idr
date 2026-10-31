@@ -10,7 +10,6 @@ import Stage1.TypeTheory.Smoothness
 import Stage1.UniverseState
 import Stage1.Order.Preorder
 import Stage0.OnSeq.FusedStream
-import Data.Fuel
 import Data.List
 
 %default total
@@ -162,14 +161,6 @@ fusedMultisetTransformStreamGoh : BoxInt -> List BoxInt -> List BoxInt
 fusedMultisetTransformStreamGoh s steps =
   fusedMultisetTransformStreamBoxNat (gohFuel (length steps)) s steps
 
-||| O(1) allocation deforested stream transducer scaling a multiset vector stream by a scale factor.
-||| 2LTT Staging Operation: Splicing (~t) - Evaluates compile-time stream transducers into executable transformed vector streams.
-public export
-fusedMultisetTransformStream : Fuel -> BoxInt -> List BoxInt -> List BoxInt
-fusedMultisetTransformStream (More f) s steps =
-  fusedMultisetTransformStreamGoh s steps
-fusedMultisetTransformStream Dry _ _ = []
-
 ||| Total Nat fuel-bounded stream transducer evaluating total sum of transformed values.
 ||| When evaluating over a finite list of steps, callers should supply Goh cyclotomic
 ||| factorization fuel `boxNatToNat (gohFuel (length steps))` or call `fusedComputeTotalTransformedSumGoh`.
@@ -198,14 +189,6 @@ public export
 fusedComputeTotalTransformedSumGoh : BoxInt -> List BoxInt -> BoxInt
 fusedComputeTotalTransformedSumGoh s steps =
   fusedComputeTotalTransformedSumBoxNat (gohFuel (length steps)) s steps
-
-||| O(1) allocation deforested stream transducer evaluating total sum of transformed values across a stream.
-||| Dynamically derives termination fuel using Goh cyclotomic factorization of the input sequence length.
-public export
-fusedComputeTotalTransformedSum : Fuel -> BoxInt -> List BoxInt -> BoxInt
-fusedComputeTotalTransformedSum (More f) s steps =
-  fusedComputeTotalTransformedSumGoh s steps
-fusedComputeTotalTransformedSum Dry _ _ = intToBoxInt 0
 
 ||| Direct deforested stream transducer scaling a BoxInt stream by a scale factor.
 ||| Eliminates list materialisation completely (Coutts et al. 2007 Stream Fusion).
@@ -266,11 +249,6 @@ fusedStreamTotalSum st = foldStream addBox (intToBoxInt 0) st
 public export
 fusedStreamTotalSumNat : (fuel : Nat) -> FusedStream BoxInt -> BoxInt
 fusedStreamTotalSumNat fuel st = foldStreamNat fuel addBox (intToBoxInt 0) st
-
-||| Total stream evaluation: folds directly over a FusedStream using Data.Fuel.
-public export
-fusedStreamTotalSumFuel : Fuel -> FusedStream BoxInt -> BoxInt
-fusedStreamTotalSumFuel fuel st = foldStreamFuel fuel addBox (intToBoxInt 0) st
 
 
 
