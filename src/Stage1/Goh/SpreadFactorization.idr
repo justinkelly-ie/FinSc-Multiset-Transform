@@ -13,6 +13,7 @@ import Stage0.BoxInt
 import Stage0.BoxNat
 import Stage0.StructuralFuel
 import Stage0.OnSeq.FusedStream as FS
+import Stage0.StreamPolynumber
 import Stage1.UnixelFraction
 import Stage1.Polynumber
 import Stage1.Goh
@@ -59,6 +60,21 @@ lucasPolynumber (S (S k)) =
         in go rem curr next
   in go k (constantPolynumber (intToBoxInt 2)) (monomialPolynumber (intToBoxInt 1) 1)
 
+||| Constructs the symbolic monic Lucas polynomial L_n(x) as a deforested StreamPolynumber:
+|||   L_0(x) = 2,  L_1(x) = x,  L_n(x) = x L_{n-1}(x) - L_{n-2}(x)
+||| Evaluates via deforested degree shifts without intermediate list allocations.
+public export
+lucasStreamPoly : (n : Nat) -> StreamPolynumber
+lucasStreamPoly Z = streamPolyConstant (intToBoxInt 2)
+lucasStreamPoly (S Z) = streamPolyMonomial 1 (intToBoxInt 1)
+lucasStreamPoly (S (S k)) =
+  let go : Nat -> StreamPolynumber -> StreamPolynumber -> StreamPolynumber
+      go Z prev curr = streamPolySub (streamPolyShiftDegree 1 curr) prev
+      go (S rem) prev curr =
+        let next = streamPolySub (streamPolyShiftDegree 1 curr) prev
+        in go rem curr next
+  in go k (streamPolyConstant (intToBoxInt 2)) (streamPolyMonomial 1 (intToBoxInt 1))
+
 --------------------------------------------------------------------------------
 -- 2. SCALED INTEGER SPREAD POLYNOMIALS Z_n(x) (Section 4, Eq 4)
 --------------------------------------------------------------------------------
@@ -79,6 +95,53 @@ public export
 stepScaledSpreadZRecurrence : Integer -> Integer -> Integer -> Integer -> Integer
 stepScaledSpreadZRecurrence x zn zn1 zn2 =
   (3 - x) * zn2 + (x - 3) * zn1 + zn
+
+||| Scaled spread polynomial recurrence stepper in StreamPolynumber (Cigler-Herbig 2026 Eq 21):
+|||   Z_{n+3}(x) = (3 - x)Z_{n+2}(x) + (x - 3)Z_{n+1}(x) + Z_n(x)
+||| Evaluates via deforested degree shifts without Cauchy convolutions.
+public export
+stepScaledSpreadZPoly : StreamPolynumber -> StreamPolynumber -> StreamPolynumber -> StreamPolynumber
+stepScaledSpreadZPoly zn zn1 zn2 =
+  let threeZn2 = streamPolyScale (intToBoxInt 3) zn2
+      xZn2     = streamPolyShiftDegree 1 zn2
+      term1    = streamPolySub threeZn2 xZn2        -- (3 - x) * Z_{n+2}
+      xZn1     = streamPolyShiftDegree 1 zn1
+      threeZn1 = streamPolyScale (intToBoxInt 3) zn1
+      term2    = streamPolySub xZn1 threeZn1        -- (x - 3) * Z_{n+1}
+  in streamPolyAdd (streamPolyAdd term1 term2) zn
+
+||| Base scaled spread polynomial Z_1(x) = x.
+public export
+scaledSpreadZPoly1 : StreamPolynumber
+scaledSpreadZPoly1 = streamPolyMonomial 1 (intToBoxInt 1)
+
+||| Base scaled spread polynomial Z_2(x) = 4x - x^2.
+public export
+scaledSpreadZPoly2 : StreamPolynumber
+scaledSpreadZPoly2 = streamPolySub (streamPolyMonomial 1 (intToBoxInt 4)) (streamPolyMonomial 2 (intToBoxInt 1))
+
+||| Base scaled spread polynomial Z_3(x) = 9x - 6x^2 + x^3.
+public export
+scaledSpreadZPoly3 : StreamPolynumber
+scaledSpreadZPoly3 =
+  streamPolyAdd (streamPolySub (streamPolyMonomial 1 (intToBoxInt 9)) (streamPolyMonomial 2 (intToBoxInt 6)))
+                (streamPolyMonomial 3 (intToBoxInt 1))
+
+||| Constructs scaled spread polynomial Z_n(x) via 3-term recurrence in StreamPolynumber.
+||| Structurally total on Nat with zero recursive calls to itself.
+public export
+scaledSpreadZStreamPoly : (n : Nat) -> StreamPolynumber
+scaledSpreadZStreamPoly Z = streamPolyZero
+scaledSpreadZStreamPoly (S Z) = scaledSpreadZPoly1
+scaledSpreadZStreamPoly (S (S Z)) = scaledSpreadZPoly2
+scaledSpreadZStreamPoly (S (S (S Z))) = scaledSpreadZPoly3
+scaledSpreadZStreamPoly (S (S (S (S k)))) =
+  let go : Nat -> StreamPolynumber -> StreamPolynumber -> StreamPolynumber -> StreamPolynumber
+      go Z zn zn1 zn2 = stepScaledSpreadZPoly zn zn1 zn2
+      go (S rem) zn zn1 zn2 =
+        let next = stepScaledSpreadZPoly zn zn1 zn2
+        in go rem zn1 zn2 next
+  in go k scaledSpreadZPoly1 scaledSpreadZPoly2 scaledSpreadZPoly3
 
 --------------------------------------------------------------------------------
 -- 3. CIGLER-HERBIG IRREDUCIBLE FACTORS Ψ_d(x) (Theorem 1.1, Section 5)
@@ -171,10 +234,38 @@ buildCiglerHerbigMultiset (d :: ds) =
   let (_ ** factor) = ciglerHerbigAuxiliary d
   in AddFactor factor (buildCiglerHerbigMultiset ds)
 
+||| Direct deforested generator building a nested GohMultiset tree directly from divisorStream
+||| with Cigler-Herbig irreducible factors, executing in O(1) registers without heap List allocations.
+public export
+factorizeSpreadZMultisetDeforested : (n : Nat) -> GohMultiset
+factorizeSpreadZMultisetDeforested Z = EmptyBag
+factorizeSpreadZMultisetDeforested (S n) =
+  foldStreamNat (S (S (S n)))
+    (\acc, d =>
+       let (_ ** factor) = ciglerHerbigAuxiliary d
+       in AddFactor factor acc)
+    EmptyBag
+    (divisorStream (S n))
+
+||| Canonical Cyclotomic Spread Hylomorphism:
+||| Unfolds degree N into its deforested divisor stream (divisorStream N),
+||| translates each divisor d into its irreducible Cigler-Herbig factor Ψ_d as a StreamPolynumber,
+||| and folds them via Cauchy polynomial multiplication into the scaled spread polynomial Z_N(x).
+public export
+cyclotomicSpreadPolyHylo : (degree : Nat) -> StreamPolynumber
+cyclotomicSpreadPolyHylo Z = streamPolyZero
+cyclotomicSpreadPolyHylo (S n) =
+  let divStrm = divisorStream (S n)
+      factorStrm = mapStream (\d =>
+        let (_ ** f) = ciglerHerbigAuxiliary d
+        in gohAuxiliaryToStreamPoly f) divStrm
+  in foldStreamNat (S (S (S n))) streamPolyCauchyMul (streamPolyConstant (intToBoxInt 1)) factorStrm
+
 ||| Assembles the additive multiset of irreducible factors ℳ(Z_n) = ∑_{d|n} {Ψ_d : 1}:
+||| Uses deforested factorizeSpreadZMultisetDeforested with zero heap allocations.
 public export
 factorizeSpreadZMultiset : (n : Nat) -> GohMultiset
-factorizeSpreadZMultiset n = buildCiglerHerbigMultiset (getDivisors n)
+factorizeSpreadZMultiset = factorizeSpreadZMultisetDeforested
 
 --------------------------------------------------------------------------------
 -- 5. 2LTT STAGED SPLICING TO STAGE 0 COMPANION MAXELS
@@ -334,6 +425,40 @@ auditCiglerHerbigSpreadFactorizationProof =
       fact3 = (evalGohAuxiliaryInteger Psi1 1 * evalGohAuxiliaryInteger Psi3 1) == evalScaledSpreadZ 3 1
       degTot = auditFactorDegreeTotientProof
   in z1 && z2 && z3 && z4 && z5 && f1 && f2 && f3 && f4 && f5 && f6 && fact2 && fact3 && degTot
+
+||| Proof: StreamPolynumber Cyclotomic Hylomorphism matches evalScaledSpreadZ at x = 1 for degrees 1..6:
+public export
+auditCyclotomicStreamPolyProof : Bool
+auditCyclotomicStreamPolyProof =
+  let e1 = evalStreamPolyNat 20 (intToBoxInt 1) (cyclotomicSpreadPolyHylo 1)
+      e2 = evalStreamPolyNat 20 (intToBoxInt 1) (cyclotomicSpreadPolyHylo 2)
+      e3 = evalStreamPolyNat 20 (intToBoxInt 1) (cyclotomicSpreadPolyHylo 3)
+      e4 = evalStreamPolyNat 20 (intToBoxInt 1) (cyclotomicSpreadPolyHylo 4)
+      e5 = evalStreamPolyNat 20 (intToBoxInt 1) (cyclotomicSpreadPolyHylo 5)
+      e6 = evalStreamPolyNat 20 (intToBoxInt 1) (cyclotomicSpreadPolyHylo 6)
+  in (e1 == intToBoxInt 1) &&
+     (e2 == intToBoxInt 3) &&
+     (e3 == intToBoxInt 4) &&
+     (e4 == intToBoxInt 3) &&
+     (e5 == intToBoxInt 1) &&
+     (e6 == intToBoxInt 0)
+
+||| Proof: StreamPolynumber Lucas recurrence matches evalLucasInteger at x = 1 for degrees 1..6:
+public export
+auditLucasStreamPolyProof : Bool
+auditLucasStreamPolyProof =
+  let l1 = evalStreamPolyNat 20 (intToBoxInt 1) (lucasStreamPoly 1)
+      l2 = evalStreamPolyNat 20 (intToBoxInt 1) (lucasStreamPoly 2)
+      l3 = evalStreamPolyNat 20 (intToBoxInt 1) (lucasStreamPoly 3)
+      l4 = evalStreamPolyNat 20 (intToBoxInt 1) (lucasStreamPoly 4)
+      l5 = evalStreamPolyNat 20 (intToBoxInt 1) (lucasStreamPoly 5)
+      l6 = evalStreamPolyNat 20 (intToBoxInt 1) (lucasStreamPoly 6)
+  in (l1 == intToBoxInt 1) &&
+     (l2 == intToBoxInt (-1)) &&
+     (l3 == intToBoxInt (-2)) &&
+     (l4 == intToBoxInt (-1)) &&
+     (l5 == intToBoxInt 1) &&
+     (l6 == intToBoxInt 2)
 
 ||| Formal theorem: The algebraic degree of the Cigler-Herbig
 ||| cyclotomic factor polynomial Psi_d identically equals Euler's totient phi(d).
