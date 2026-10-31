@@ -41,7 +41,7 @@ dimensionWitness (MkUniverseState _ w) = w
 
 ||| Constructs a UniverseState by supplying a compile-time SmoothWitness for any prime bound.
 public export
-seedCosmicVacuumBounded : (bound : Nat) -> (vm : Nat) -> (de : Nat) -> (dm : Nat) -> SmoothWitness bound (vm + de + dm) -> UniverseState bound vm de dm
+seedCosmicVacuumBounded : (bound : Nat) -> (vm : Nat) -> (de : Nat) -> (dm : Nat) -> (0 prf : SmoothWitness bound (vm + de + dm)) -> UniverseState bound vm de dm
 seedCosmicVacuumBounded bound vm de dm prf =
   MkUniverseState (seedCosmicVacuum vm de dm) (MkDimensionWitness prf)
 
@@ -56,7 +56,7 @@ CosmicUniverseState = UniverseState CosmicSmoothHorizon
 
 ||| Constructs a canonical CosmicUniverseState with compile-time 13-horizon witness.
 public export
-seedCosmicVacuumCertified : (vm : Nat) -> (de : Nat) -> (dm : Nat) -> SmoothWitness CosmicSmoothHorizon (vm + de + dm) -> CosmicUniverseState vm de dm
+seedCosmicVacuumCertified : (vm : Nat) -> (de : Nat) -> (dm : Nat) -> (0 prf : SmoothWitness CosmicSmoothHorizon (vm + de + dm)) -> CosmicUniverseState vm de dm
 seedCosmicVacuumCertified vm de dm prf =
   seedCosmicVacuumBounded CosmicSmoothHorizon vm de dm prf
 

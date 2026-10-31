@@ -18,6 +18,7 @@ import Stage1.TypeTheory.Staging
 import Stage1.Basis.Coordinate
 import Stage1.Goh.Factor
 import Stage1.Goh.SpreadFactorization
+import Stage1.Math.OnSeq.ConjugateDuality
 import Stage1.TypeTheory.Smoothness
 import public Stage1.FourGeometries
 
@@ -162,15 +163,13 @@ fusedSpreadHylomorphismNat : (fuel : Nat) ->
                               (s -> Step s GohMultiset) ->
                               (GohMultiset -> b -> b) ->
                               b -> s -> b
-fusedSpreadHylomorphismNat Z _ _ acc _ = acc
-fusedSpreadHylomorphismNat (S f) next consumerFold acc seed = loop f seed acc
-  where
-    loop : Nat -> s -> b -> b
-    loop Z _ currentAcc = currentAcc
-    loop (S f') st currentAcc = case next st of
-      Done => currentAcc
-      Skip st' => loop f' st' currentAcc
-      Yield bag st' => loop f' st' (consumerFold bag currentAcc)
+fusedSpreadHylomorphismNat fuel next consumerFold acc seed =
+  fusedConjugateHyloNat fuel next
+    (\case
+        Done => acc
+        Skip s => s
+        Yield g s => consumerFold g s)
+    id acc seed
 
 ||| Evaluates an allocation-free deforested Goh spread polynomial stream generator under 
 ||| category-theoretic adjunction folds (Adjoint Hylomorphism) using BoxNat fuel.
@@ -180,7 +179,12 @@ fusedSpreadHylomorphismBoxNat : BoxNat ->
                               (GohMultiset -> b -> b) ->
                               b -> s -> b
 fusedSpreadHylomorphismBoxNat bfuel next consumerFold acc seed =
-  fusedSpreadHylomorphismNat (boxNatToNat bfuel) next consumerFold acc seed
+  fusedConjugateHyloBoxNat bfuel next
+    (\case
+        Done => acc
+        Skip s => s
+        Yield g s => consumerFold g s)
+    id acc seed
 
 ||| Evaluates an allocation-free deforested Goh spread polynomial stream generator under 
 ||| category-theoretic adjunction folds (Adjoint Hylomorphism).
@@ -190,8 +194,13 @@ fusedSpreadHylomorphism : Fuel ->
                           (GohMultiset -> b -> b) ->
                           b -> s -> b
 fusedSpreadHylomorphism Dry _ _ acc _ = acc
-fusedSpreadHylomorphism (More f') next consumerFold acc seed =
-  fusedSpreadHylomorphismBoxNat masterSubstrateGohFuel next consumerFold acc seed
+fusedSpreadHylomorphism (More f) next consumerFold acc seed =
+  fusedConjugateHylo (More f) next
+    (\case {
+        Done => acc
+        Skip s => s
+        Yield g s => consumerFold g s })
+    id acc seed
 
 ||| Evaluates a deforested Goh spread polynomial list fold structurally without Fuel.
 public export
