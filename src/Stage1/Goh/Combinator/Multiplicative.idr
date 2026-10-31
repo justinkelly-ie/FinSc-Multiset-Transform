@@ -75,8 +75,8 @@ public export
 observerDimension : CosmicDimension
 observerDimension = dimObserver
 
-||| Validated 13-smooth composite dimension of the Primorial 210 Ground State (2 ⊗ 3 ⊗ 5 ⊗ 7 = 210).
+||| Validated 13-smooth composite dimension of the Primorial Ground State (2 ⊗ 3 ⊗ 5 ⊗ 7 = 210).
 public export
 primorialDimension : CosmicDimension
-primorialDimension = dimPrimorial210
+primorialDimension = dimPrimorial
 
