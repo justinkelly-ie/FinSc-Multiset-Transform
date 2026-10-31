@@ -75,36 +75,27 @@ companionMaxelND (S (S k)) coeffs =
       tSub = subDiag 0 (S k) emptyCellMultiset
   in colEntries 0 coeffs tSub
 
-||| Looks up the coefficient for a specific degree in an unfolded term list.
-public export
-lookupCoeffDeg : Nat -> List (Nat, BoxInt) -> BoxInt
-lookupCoeffDeg target terms =
-  case find (\(d, _) => d == target) terms of
-    Just (_, w) => w
-    Nothing     => intToBoxInt 0
-
-||| Extracts the first deg coefficients [c0, c1, ..., c_{deg-1}] as a Vect.
-public export
-extractCoeffsVect : (deg : Nat) -> (idx : Nat) -> List (Nat, BoxInt) -> Vect deg BoxInt
-extractCoeffsVect Z _ _ = []
-extractCoeffsVect (S k) idx terms =
-  lookupCoeffDeg idx terms :: extractCoeffsVect k (S idx) terms
-
 ||| Generalized natural transformation eta from a degree-d StreamPolynumber to its d x d companion Maxel.
-||| Extracts [c0, c1, ..., c_{d-1}] from the sparse stream and builds companionMaxelND.
+||| Emits subdiagonal 1s and folds stream coefficients directly into the rightmost column in a single pass (Rule 04 §8).
 public export
 companionMaxelFromPolyDeg : (deg : Nat) -> StreamPolynumber -> Maxel
-companionMaxelFromPolyDeg deg p =
-  let terms = streamPolyToListNat (S deg) p
-      coeffs = extractCoeffsVect deg 0 terms
-  in companionMaxelND deg coeffs
-
-||| Extracts sparse polynomial terms directly into a balanced BoxMultisetTree Nat in O(N log N) time.
-||| Prunes zero coefficients to preserve active physical support.
-public export
-extractCoeffsTree : List (Nat, BoxInt) -> BoxMultisetTree Nat
-extractCoeffsTree terms =
-  foldl (\acc, (deg, w) => setBoxTree deg w acc) BoxLeaf terms
+companionMaxelFromPolyDeg Z _ = emptyCellMultiset
+companionMaxelFromPolyDeg (S Z) p =
+  let c0 = FS.foldStreamNat 5 (\acc, (d, w) => if d == 0 then w else acc) (intToBoxInt 0) p
+  in if boxIsZero c0 then emptyCellMultiset else singletonCell (mkCell2 1 1) c0
+companionMaxelFromPolyDeg (S (S k)) p =
+  let dim = S (S k)
+      subDiag : (i : Nat) -> (count : Nat) -> Maxel -> Maxel
+      subDiag _ Z acc = acc
+      subDiag i (S rem) acc =
+        subDiag (S i) rem (setBoxTree (mkCell2 (i + 2) (i + 1)) (intToBoxInt 1) acc)
+      tSub = subDiag 0 (S k) emptyCellMultiset
+      fuel = dim * 2 + 10
+      colFold = FS.foldStreamNat fuel (\acc, (d, w) =>
+                  if d < dim && boxIsNonZero w
+                    then setBoxTree (mkCell2 (d + 1) dim) w acc
+                    else acc) tSub p
+  in colFold
 
 ||| Converts a StreamPolynumber directly to a balanced BoxMultisetTree Nat bounded by fuel.
 public export
