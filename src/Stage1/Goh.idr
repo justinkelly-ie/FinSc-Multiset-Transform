@@ -14,6 +14,7 @@ import Stage0.StructuralFuel
 import Stage1.UnixelFraction
 import Stage0.OnSeq.FusedStream
 import Stage0.StreamPolynumber
+import Stage1.Polynumber
 import Stage1.TypeTheory.Staging
 
 %default total
@@ -42,12 +43,12 @@ powerUnixelFractionBoxNat x bn = powerUnixelFraction x (boxNatToNat bn)
 ||| Expressed as an irreducible component Phi_k(s) with ascending coefficients:
 ||| P(s) = c_0 + c_1 s + ... + c_deg s^deg.
 public export
-record GohAuxiliary (degree : Nat) where
+record GohAuxiliary (deg : Nat) where
   constructor Phi
-  coefficients : Vect (S degree) UnixelFraction
+  coefficients : Vect (S deg) UnixelFraction
 
 public export
-implementation Eq (GohAuxiliary degree) where
+implementation Eq (GohAuxiliary deg) where
   (Phi c1) == (Phi c2) = c1 == c2
 
 --------------------------------------------------------------------------------
@@ -178,7 +179,7 @@ gohMultisetFuelBox bag =
 
 ||| Checks if a GohAuxiliary factor has all zero coefficients.
 public export
-isZeroAuxiliary : GohAuxiliary degree -> Bool
+isZeroAuxiliary : GohAuxiliary deg -> Bool
 isZeroAuxiliary (Phi coeffs) = all (\c => rationalEquiv c zeroUnixelFraction) coeffs
 
 ||| Inserts a factor into a GohMultiset, combining multiplicities if an identical factor is found.
@@ -259,7 +260,7 @@ prfGohMonoidAssociative (AddFactorM f m rest) b c =
 ||| Evaluates a GohAuxiliary spread polynomial P(s) = sum_{k=0}^deg c_k s^k
 ||| at an exact UnixelFraction spread value s using Horner's method.
 public export
-evalGohPoly : GohAuxiliary degree -> UnixelFraction -> UnixelFraction
+evalGohPoly : GohAuxiliary deg -> UnixelFraction -> UnixelFraction
 evalGohPoly (Phi coeffs) s =
   foldr (\c, acc => addUnixelFraction c (mulUnixelFraction s acc)) zeroUnixelFraction coeffs
 
@@ -356,6 +357,23 @@ gohMultisetToStreamPoly (AddFactorM factor m rest) =
   let n = boxNatToNat m
       powP = streamPolyPowerCauchy (gohAuxiliaryToStreamPoly factor) n
   in streamPolyCauchyMul powP (gohMultisetToStreamPoly rest)
+
+||| Converts a GohAuxiliary factor with integer coefficients to a dense Polynumber.
+public export
+gohAuxiliaryToPolynumber : {deg : Nat} -> GohAuxiliary deg -> Polynumber
+gohAuxiliaryToPolynumber (Phi coeffs) =
+  trimPolynumber (MkPolynumber (toList (map (\c => c.num) coeffs)))
+
+||| Folds an entire GohMultiset factorization tree into a single dense Polynumber.
+public export
+gohMultisetToPolynumber : GohMultiset -> Polynumber
+gohMultisetToPolynumber EmptyBag = constantPolynumber (intToBoxInt 1)
+gohMultisetToPolynumber (AddFactor factor rest) =
+  mulPolynumber (gohAuxiliaryToPolynumber factor) (gohMultisetToPolynumber rest)
+gohMultisetToPolynumber (AddFactorM factor m rest) =
+  let n = boxNatToNat m
+      powP = powerPolynumber (gohAuxiliaryToPolynumber factor) n
+  in mulPolynumber powP (gohMultisetToPolynumber rest)
 
 --------------------------------------------------------------------------------
 -- 3. FRACTIONAL MEASUREMENT RANGE & NESTED MULTISET STREAM RESOLUTION

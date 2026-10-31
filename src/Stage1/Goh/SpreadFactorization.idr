@@ -290,6 +290,29 @@ prfZ6Fibonacci = Refl
 -- 8. COMPOSITE STATIC AUDITOR FUNCTION FOR TEST HARNESSES
 --------------------------------------------------------------------------------
 
+||| Verifies that every Cigler-Herbig factor Psi_d has algebraic degree identically equal to Euler's totient phi(d):
+public export
+prop_factorDegreeTotientIdentity : (d : Nat) -> Bool
+prop_factorDegreeTotientIdentity d =
+  let (deg ** factor) = ciglerHerbigAuxiliary d
+      poly = gohAuxiliaryToPolynumber factor
+  in deg == totientNat d && polynumberDegree poly == totientNat d
+
+||| Compile-time verification of the Cigler-Herbig degree-totient identity across canonical factors:
+public export
+auditFactorDegreeTotientProof : Bool
+auditFactorDegreeTotientProof =
+  prop_factorDegreeTotientIdentity 1 &&
+  prop_factorDegreeTotientIdentity 2 &&
+  prop_factorDegreeTotientIdentity 3 &&
+  prop_factorDegreeTotientIdentity 4 &&
+  prop_factorDegreeTotientIdentity 5 &&
+  prop_factorDegreeTotientIdentity 6 &&
+  prop_factorDegreeTotientIdentity 7 &&
+  prop_factorDegreeTotientIdentity 8 &&
+  prop_factorDegreeTotientIdentity 10 &&
+  prop_factorDegreeTotientIdentity 12
+
 ||| Single boolean auditor verifying all Cigler-Herbig Spread Factorization theorems:
 public export
 auditCiglerHerbigSpreadFactorizationProof : Bool
@@ -307,4 +330,5 @@ auditCiglerHerbigSpreadFactorizationProof =
       f6 = evalScaledSpreadZ 6 5 == (-320)
       fact2 = (evalGohAuxiliaryInteger Psi1 1 * evalGohAuxiliaryInteger Psi2 1) == evalScaledSpreadZ 2 1
       fact3 = (evalGohAuxiliaryInteger Psi1 1 * evalGohAuxiliaryInteger Psi3 1) == evalScaledSpreadZ 3 1
-  in z1 && z2 && z3 && z4 && z5 && f1 && f2 && f3 && f4 && f5 && f6 && fact2 && fact3
+      degTot = auditFactorDegreeTotientProof
+  in z1 && z2 && z3 && z4 && z5 && f1 && f2 && f3 && f4 && f5 && f6 && fact2 && fact3 && degTot

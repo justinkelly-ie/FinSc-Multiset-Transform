@@ -162,33 +162,50 @@ fusedSpreadHylomorphismBoxNat bfuel next consumerFold acc seed =
         Yield g s => consumerFold g s)
     id acc seed
 
-||| Evaluates an allocation-free deforested Goh spread polynomial stream generator under 
-||| category-theoretic adjunction folds (Adjoint Hylomorphism).
+||| Generalized Cyclotomic Multiset Hylomorphism:
+||| Unfolds degree N into its deforested divisor stream (Coalgebra),
+||| maps each divisor to target items (Transducer),
+||| and folds them into an accumulator (Algebra) in a single allocation-free pass.
 public export
-fusedSpreadHylomorphism : Fuel ->
-                          (s -> Step s GohMultiset) ->
-                          (GohMultiset -> b -> b) ->
-                          b -> s -> b
-fusedSpreadHylomorphism Dry _ _ acc _ = acc
-fusedSpreadHylomorphism (More f) next consumerFold acc seed =
-  fusedConjugateHylo (More f) next
-    (\case {
-        Done => acc
-        Skip s => s
-        Yield g s => consumerFold g s })
-    id acc seed
+cyclotomicMultisetHyloGen : {0 a, b : Type} ->
+                           (fuel : Nat) ->
+                           (degree : Nat) ->
+                           (Nat -> FusedStream a) ->
+                           (a -> b -> b) ->
+                           b -> b
+cyclotomicMultisetHyloGen fuel deg transducer algebra initVal =
+  let divStrm = divisorStream deg
+      elemStrm = flatMapStream transducer divStrm
+  in foldStreamNat fuel (\acc, item => algebra item acc) initVal elemStrm
 
-||| Canonical Cyclotomic Multiset Hylomorphism:
+||| Canonical Cyclotomic Multiset Hylomorphism (Companion Maxel basis pixels):
 ||| Unfolds degree N into its deforested divisor stream, translates each factor
 ||| into its companion Maxel support pixels, and folds them into an accumulator
 ||| in a single allocation-free pass.
 public export
+cyclotomicPixelHylo : (degree : Nat) ->
+                      (Pixel -> b -> b) ->
+                      b -> b
+cyclotomicPixelHylo deg foldFn initVal =
+  let pxStrm = unfoldGohSupportStreamDeforested deg
+  in foldStreamNat (deg * 10 + 10) (\acc, px => foldFn px acc) initVal pxStrm
+
+||| Backward-compatible alias for cyclotomicPixelHylo.
+public export
 cyclotomicMultisetHylo : (degree : Nat) ->
                          (Pixel -> b -> b) ->
                          b -> b
-cyclotomicMultisetHylo deg foldFn initVal =
-  let pxStrm = unfoldGohSupportStreamDeforested deg
-  in foldStreamNat (deg * 10 + 10) (\acc, px => foldFn px acc) initVal pxStrm
+cyclotomicMultisetHylo = cyclotomicPixelHylo
+
+||| Cyclotomic Support Hylomorphism:
+||| Folds active totient degree support terms directly from the cyclotomic divisor stream.
+public export
+cyclotomicSupportHylo : (degree : Nat) ->
+                       (Nat -> b -> b) ->
+                       b -> b
+cyclotomicSupportHylo deg foldFn initVal =
+  let divStrm = divisorStream deg
+  in foldStreamNat (deg * 10 + 10) (\acc, d => foldFn (totientNat d) acc) initVal divStrm
 
 ------------------------------------------------------------------------
 -- 5. EULER TOTIENT & PRIME FACTOR SPECTRUM DECOMPOSITION
@@ -288,10 +305,6 @@ prop_chromogeometricBudgetConservation (S n) =
       budget = computeChromogeometricBudgetDeforested strm
   in totalChromogeometricCapacity budget == dim
 
-||| Deforested stream budget conservation alias.
-public export
-prop_chromogeometricBudgetDeforestedConservation : Nat -> Bool
-prop_chromogeometricBudgetDeforestedConservation = prop_chromogeometricBudgetConservation
 
 ------------------------------------------------------------------------
 -- 6. PRIMORIAL 210 UNFOLDING BUDGET & 4GEOMETRIES STAGING
