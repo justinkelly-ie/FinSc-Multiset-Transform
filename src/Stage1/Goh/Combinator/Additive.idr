@@ -163,7 +163,7 @@ prfFourGeometriesMultisetPartition2Plus2 = Refl
 ||| Validated 13-smooth dimension of the 4-geometry multiset carrier (2 ⊕ 2 = 4).
 public export
 fourGeometriesDimension : CosmicDimension
-fourGeometriesDimension = (the Nat 4 ** prfSmooth4)
+fourGeometriesDimension = certifiedDimension CosmicSmoothHorizon 4
 
 ------------------------------------------------------------------------
 -- 6. DEPENDENT DYADIC GEOMETRY FIXED POINT RECORD (2 ⊕ 2 = 2 ⊗ 2 = 4)

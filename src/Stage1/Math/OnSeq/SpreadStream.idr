@@ -28,11 +28,11 @@ import public Stage1.FourGeometries
 -- 1. TOTAL DIVISOR CALCULATOR & GOH AUXILIARY FACTOR GENERATOR
 ------------------------------------------------------------------------
 
-||| Computes all divisors k | n of a natural number n.
+||| Computes all divisors k | n of a natural number n deforested via divisorStream in O(1) auxiliary registers.
 public export
 divisors : Nat -> List Nat
 divisors Z = []
-divisors (S n) = filter (\d => (S n) `mod` d == Z) [1..S n]
+divisors (S n) = runFueledStreamNat (S (S n)) (divisorStream (S n))
 
 ------------------------------------------------------------------------
 -- 2. DEFORESTED GOH SPREAD POLYNOMIAL STREAM GENERATORS
@@ -210,15 +210,15 @@ public export
 prop_totientEqualsSupportSize : (d : Nat) -> Bool
 prop_totientEqualsSupportSize d = totient d == gohSupportSize d
 
-||| Extracts prime factors p | k driving the cyclotomic phase gate.
+||| Extracts prime factors p | k driving the cyclotomic phase gate without heap range list allocations.
 public export
 primeFactors : Nat -> List Nat
 primeFactors Z = []
 primeFactors (S Z) = []
 primeFactors (S (S n)) =
   let num = S (S n)
-      candidates = [2..num]
-  in filter (\p => num `mod` p == Z && length (divisors p) == 2) candidates
+      divs = runFueledStreamNat (S num) (divisorStream num)
+  in filter (\p => p >= 2 && isPrimeCandidate p 2 p) divs
 
 ||| Extracts the prime factor spectrum from a GohMultiset factor bag.
 public export

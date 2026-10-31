@@ -63,4 +63,4 @@ seedCosmicVacuumCertified vm de dm prf =
 ||| Canonical Primorial 210 Ground State (27 VM, 128 DE, 55 DM, unique F = -1320 minimum).
 public export
 seedPrimorialGroundState : CosmicUniverseState 27 128 55
-seedPrimorialGroundState = seedCosmicVacuumCertified 27 128 55 prfSmooth210
+seedPrimorialGroundState = seedCosmicVacuumCertified 27 128 55 Refl

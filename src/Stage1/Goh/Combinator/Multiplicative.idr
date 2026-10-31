@@ -73,10 +73,10 @@ prfBoxMulMatchesNat = Refl
 ||| Validated 13-smooth composite dimension of the Observer Epoch (3 ⊗ 13 = 39).
 public export
 observerDimension : CosmicDimension
-observerDimension = (the Nat 39 ** prfSmooth39)
+observerDimension = dimObserver
 
 ||| Validated 13-smooth composite dimension of the Primorial 210 Ground State (2 ⊗ 3 ⊗ 5 ⊗ 7 = 210).
 public export
 primorialDimension : CosmicDimension
-primorialDimension = (the Nat 210 ** prfSmooth210)
+primorialDimension = dimPrimorial210
 
