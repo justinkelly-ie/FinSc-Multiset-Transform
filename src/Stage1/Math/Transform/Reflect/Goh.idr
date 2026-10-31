@@ -71,19 +71,6 @@ spliceGohMultiset (MkLevelBox b) = MkLevelBox b
 -- 3. EULER TOTIENT GOH ROOT DEGREE SUM WITNESS (∑_{d|N} φ(d) = N)
 --------------------------------------------------------------------------------
 
-||| Computes Euler's totient function φ(d): number of k ∈ [1..d] coprime to d
-public export
-totientNat : Nat -> Nat
-totientNat Z = 0
-totientNat (S Z) = 1
-totientNat d = length (filter (\k => eucGcd k d == 1) (upTo d))
-  where
-    eucGcd : Nat -> Nat -> Nat
-    eucGcd a Z = a
-    eucGcd Z b = b
-    eucGcd a b = if a >= b then eucGcd (assert_smaller a (a `minus` b)) b
-                           else eucGcd a (assert_smaller b (b `minus` a))
-
 ||| Computes the sum of totient root degrees φ(d) across all divisors d | N
 public export
 totientSumDivisors : Nat -> Nat

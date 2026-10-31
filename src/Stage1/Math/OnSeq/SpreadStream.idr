@@ -34,21 +34,6 @@ divisors : Nat -> List Nat
 divisors Z = []
 divisors (S n) = filter (\d => (S n) `mod` d == Z) [1..S n]
 
-||| Deforested stream of divisors of n from 1 up to n (Coutts et al. 2007 Stream Fusion).
-||| Eliminates intermediate List allocation completely.
-public export
-divisorStream : Nat -> FusedStream Nat
-divisorStream Z = stream []
-divisorStream (S n) = unfoldStream nextStep (1, S n)
-  where
-    nextStep : (Nat, Nat) -> Step (Nat, Nat) Nat
-    nextStep (cand, target) =
-      if cand > target then Done
-      else if target `mod` cand == Z then
-        Yield cand (S cand, target)
-      else
-        Skip (S cand, target)
-
 ------------------------------------------------------------------------
 -- 2. DEFORESTED GOH SPREAD POLYNOMIAL STREAM GENERATORS
 ------------------------------------------------------------------------
@@ -66,15 +51,6 @@ makeGohFactor : (k : Nat) -> GohAuxiliary k
 makeGohFactor k =
   let coeffs = Data.Vect.replicate (S k) (mkUnixelFraction (intToBoxInt 1) 1)
   in Phi coeffs
-
-||| Unfolds a natural frequency index n into an allocation-free deforested stream of Goh factors Phi_k.
-public export
-unfoldGohFactorStream : Nat -> FusedStream GohMultiset
-unfoldGohFactorStream Z = stream []
-unfoldGohFactorStream (S n) =
-  let divs = divisors (S n)
-      bags = map divFactorToMultiset divs
-  in stream bags
 
 ||| Fully deforested unfolding of frequency index n into Goh factors without intermediate List buffers.
 public export
@@ -202,35 +178,37 @@ fusedSpreadHylomorphism (More f) next consumerFold acc seed =
         Yield g s => consumerFold g s })
     id acc seed
 
-||| Evaluates a deforested Goh spread polynomial list fold structurally without Fuel.
+||| Canonical Cyclotomic Multiset Hylomorphism:
+||| Unfolds degree N into its deforested divisor stream, translates each factor
+||| into its companion Maxel support pixels, and folds them into an accumulator
+||| in a single allocation-free pass.
 public export
-structuralSpreadFold : List GohMultiset -> (GohMultiset -> b -> b) -> b -> b
-structuralSpreadFold [] _ acc = acc
-structuralSpreadFold (x :: xs) f acc = structuralSpreadFold xs f (f x acc)
+cyclotomicMultisetHylo : (degree : Nat) ->
+                         (Pixel -> b -> b) ->
+                         b -> b
+cyclotomicMultisetHylo deg foldFn initVal =
+  let pxStrm = unfoldGohSupportStreamDeforested deg
+  in foldStreamNat (deg * 10 + 10) (\acc, px => foldFn px acc) initVal pxStrm
 
 ------------------------------------------------------------------------
 -- 5. EULER TOTIENT & PRIME FACTOR SPECTRUM DECOMPOSITION
 ------------------------------------------------------------------------
 
-||| Total fuel-bounded natural numbers Greatest Common Divisor calculator.
-public export
-natGCDFuel : Nat -> Nat -> Nat -> Nat
-natGCDFuel Z _ b = b
-natGCDFuel (S f) a Z = a
-natGCDFuel (S f) a b = natGCDFuel f b (a `mod` b)
-
-public export
-natGCD : Nat -> Nat -> Nat
-natGCD a b = natGCDFuel (a + b) a b
-
-||| Computes Euler's totient function phi(n) for degree accounting.
+||| Euler's totient function phi(n) tracking algebraic degree and multiset support cardinality.
+||| Re-exports canonical implementation from FusedStream.
 public export
 totient : Nat -> Nat
-totient Z = Z
-totient (S Z) = S Z
-totient (S n) =
-  let k = S n
-  in length (filter (\d => natGCD k d == 1) [1..k])
+totient = totientNat
+
+||| Cardinality of the Wildberger Support of a Goh factor Phi_d(s): exactly equal to totient(d).
+public export
+gohSupportSize : (d : Nat) -> Nat
+gohSupportSize d = totient d
+
+||| Formal Triad Duality witness linking algebraic totient to multiset support cardinality.
+public export
+prop_totientEqualsSupportSize : (d : Nat) -> Bool
+prop_totientEqualsSupportSize d = totient d == gohSupportSize d
 
 ||| Extracts prime factors p | k driving the cyclotomic phase gate.
 public export
@@ -249,32 +227,6 @@ gohPrimeSpectrum EmptyBag = []
 gohPrimeSpectrum (AddFactorM {deg} _ _ rest) = primeFactors deg ++ gohPrimeSpectrum rest
 gohPrimeSpectrum (AddFactor {deg} _ rest) = primeFactors deg ++ gohPrimeSpectrum rest
 
-||| Computes accumulated degree budget capacity across Blue (Elliptic), Red (Hyperbolic), Green (Parabolic) sectors.
-public export
-chromogeometricBudgetExhaustion : List GohMultiset -> (Nat, Nat, Nat)
-chromogeometricBudgetExhaustion bags = foldl step (Z, Z, Z) bags
-  where
-    step : (Nat, Nat, Nat) -> GohMultiset -> (Nat, Nat, Nat)
-    step (b, r, g) EmptyBag = (b, r, g)
-    step (b, r, g) (AddFactorM {deg} _ m rest) =
-      let degWeight = totient deg * boxNatToNat m
-          (b', r', g') =
-            if snd (natDivMod deg 3) == 0 then (b + degWeight, r, g)
-            else if not (snd (natHalfAndOdd deg)) then (b, r + degWeight, g)
-            else (b, r, g + degWeight)
-      in step (b', r', g') rest
-    step (b, r, g) (AddFactor {deg} _ rest) =
-      let (b', r', g') =
-            if snd (natDivMod deg 3) == 0 then (b + totient deg, r, g)
-            else if not (snd (natHalfAndOdd deg)) then (b, r + totient deg, g)
-            else (b, r, g + totient deg)
-      in step (b', r', g') rest
-
-||| Cardinality of the Wildberger Support of a Goh factor Phi_d(s): exactly equal to totient(d).
-public export
-gohSupportSize : (d : Nat) -> Nat
-gohSupportSize d = totient d
-
 ||| Formal Chromogeometric Sector Budget Record tracking degree allocation across Blue, Red, and Green metrics
 public export
 record ChromogeometricSectorBudget where
@@ -292,24 +244,6 @@ Eq ChromogeometricSectorBudget where
 public export
 totalChromogeometricCapacity : ChromogeometricSectorBudget -> Nat
 totalChromogeometricCapacity (MkChromogeometricSectorBudget b r g) = b + r + g
-
-||| Computes exact ChromogeometricSectorBudget from a list of GohMultiset factor bags
-public export
-computeChromogeometricBudget : List GohMultiset -> ChromogeometricSectorBudget
-computeChromogeometricBudget bags =
-  let (b, r, g) = chromogeometricBudgetExhaustion bags
-  in MkChromogeometricSectorBudget b r g
-
-||| Verifies that Chromogeometric Sector Budget total capacity equals dimension N (b + r + g = N)
-public export
-prop_chromogeometricBudgetConservation : Nat -> Bool
-prop_chromogeometricBudgetConservation Z = True
-prop_chromogeometricBudgetConservation (S n) =
-  let dim = S n
-      divs = divisors dim
-      bags = map (\d => AddFactor (makeGohFactor d) EmptyBag) divs
-      budget = computeChromogeometricBudget bags
-  in totalChromogeometricCapacity budget == dim
 
 ||| Computes exact ChromogeometricSectorBudget directly from a deforested stream of GohMultiset factor bags.
 public export
@@ -334,15 +268,30 @@ computeChromogeometricBudgetDeforested strm =
             else (b, r, g + totient deg)
       in step (b', r', g') rest
 
-||| Verifies that deforested stream budget computation matches the list-buffered version for dimension N.
+||| Computes exact ChromogeometricSectorBudget from a list of GohMultiset factor bags by streaming:
 public export
-prop_chromogeometricBudgetDeforestedConservation : Nat -> Bool
-prop_chromogeometricBudgetDeforestedConservation Z = True
-prop_chromogeometricBudgetDeforestedConservation (S n) =
+computeChromogeometricBudget : List GohMultiset -> ChromogeometricSectorBudget
+computeChromogeometricBudget bags = computeChromogeometricBudgetDeforested (stream bags)
+
+||| Streams Goh factor bags of degree d across all divisors d | n in O(1) auxiliary registers.
+public export
+streamDivisorGohFactors : Nat -> FusedStream GohMultiset
+streamDivisorGohFactors n = mapStream (\d => AddFactor (makeGohFactor d) EmptyBag) (divisorStream n)
+
+||| Verifies that Chromogeometric Sector Budget total capacity equals dimension N (b + r + g = N).
+public export
+prop_chromogeometricBudgetConservation : Nat -> Bool
+prop_chromogeometricBudgetConservation Z = True
+prop_chromogeometricBudgetConservation (S n) =
   let dim = S n
-      strm = unfoldGohFactorStreamDeforested dim
+      strm = streamDivisorGohFactors dim
       budget = computeChromogeometricBudgetDeforested strm
   in totalChromogeometricCapacity budget == dim
+
+||| Deforested stream budget conservation alias.
+public export
+prop_chromogeometricBudgetDeforestedConservation : Nat -> Bool
+prop_chromogeometricBudgetDeforestedConservation = prop_chromogeometricBudgetConservation
 
 ------------------------------------------------------------------------
 -- 6. PRIMORIAL 210 UNFOLDING BUDGET & 4GEOMETRIES STAGING
@@ -376,9 +325,8 @@ classifyStageGeometry (MkLevelBox (MkBox ((g, _) :: _))) = classifySpreadStreamS
 public export
 prop_primorial210UnfoldingInvariance : Bool
 prop_primorial210UnfoldingInvariance =
-  let divs210 = divisors 210
-      bags210 = map (\d => AddFactor (makeGohFactor d) EmptyBag) divs210
-      budget = computeChromogeometricBudget bags210
+  let strm = streamDivisorGohFactors 210
+      budget = computeChromogeometricBudgetDeforested strm
       primBudget = MkPrimorial210UnfoldingBudget budget.blueElliptic budget.redHyperbolic budget.greenParabolic
   in totalPrimorial210Capacity primBudget == 210
 

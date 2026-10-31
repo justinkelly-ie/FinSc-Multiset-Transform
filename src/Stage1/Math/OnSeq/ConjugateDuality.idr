@@ -3,6 +3,7 @@ module Stage1.Math.OnSeq.ConjugateDuality
 import public Stage0.OnSeq.FusedStream
 import public Stage0.Multiset
 import public Stage0.StructuralFuel
+import public Stage1.ConjugateHylo
 import public Stage1.TypeTheory.TwoLevel
 import public Stage1.MultisetDuality
 import Data.Fuel
@@ -23,51 +24,6 @@ ConjugateNatTrans f g l = {a : Type} -> l (f a) -> g (l a)
 -- 2. 2LTT STRICT REFLECTION HYLOMORPHISM (MAMAMORPHISM)
 --------------------------------------------------------------------------------
 
-||| Executes a total Nat fuel-bounded 2LTT Conjugate Hylomorphism (Mamamorphism).
-||| Eliminates partiality and covering annotations via structural recursion on fuel.
-public export
-fusedConjugateHyloNat : {0 c, s, a : Type} ->
-                        (fuel : Nat) ->
-                        (coalgebra : c -> Step c a) ->
-                        (algebra : Step s a -> s) ->
-                        (bridge : a -> a) ->
-                        s -> c -> s
-fusedConjugateHyloNat Z _ _ _ acc _ = acc
-fusedConjugateHyloNat (S f) coalg alg bridge acc seed = loop f seed acc
-  where
-    loop : Nat -> c -> s -> s
-    loop Z _ currentAcc = currentAcc
-    loop (S f') st currentAcc = case coalg st of
-      Done => currentAcc
-      Skip st' => loop f' st' currentAcc
-      Yield x st' =>
-        let x' = bridge x
-            newAcc = alg (Yield x' currentAcc)
-        in loop f' st' newAcc
-
-||| Executes a 2LTT Conjugate Hylomorphism using BoxNat fuel.
-public export
-fusedConjugateHyloBoxNat : {0 c, s, a : Type} ->
-                         BoxNat ->
-                         (coalgebra : c -> Step c a) ->
-                         (algebra : Step s a -> s) ->
-                         (bridge : a -> a) ->
-                         s -> c -> s
-fusedConjugateHyloBoxNat bfuel coalg alg bridge acc seed =
-  fusedConjugateHyloNat (boxNatToNat bfuel) coalg alg bridge acc seed
-
-||| Executes a 2LTT Conjugate Hylomorphism (Mamamorphism) bridging strict outer streams
-||| (StrictLevel L) to inner homotopy physical states (HomotopyLevel R) via strict reflection.
-public export
-fusedConjugateHylo : {0 c, s, a : Type} ->
-                     Fuel ->
-                     (coalgebra : c -> Step c a) ->
-                     (algebra : Step s a -> s) ->
-                     (bridge : a -> a) ->
-                     s -> c -> s
-fusedConjugateHylo Dry _ _ _ acc _ = acc
-fusedConjugateHylo (More f') coalg alg bridge acc seed =
-  fusedConjugateHyloBoxNat masterSubstrateGohFuel coalg alg bridge acc seed
 
 ||| 2LTT Subfibration Transducer: Maps strict outer stream folds to inner homotopy physical manifolds.
 ||| Incorporates QTT 0 erased proof witnesses for zero-runtime-cost subfibration transformations.
@@ -90,25 +46,10 @@ TwoLevelConjugateDuality = TwoLevelConjugateAdjunction
 -- 3. PROOF WITNESS AUDITS FOR 2LTT CONJUGATE HYLOMORPHISM EQUIVALENCE
 --------------------------------------------------------------------------------
 
-||| Static audit witness confirming conjugate hylomorphism preserves identity transforms.
-public export
-auditConjugateAdjunctionProof : Bool
-auditConjugateAdjunctionProof =
-  let res = fusedConjugateHyloNat 100
-              (\xs => case xs of
-                        [] => Done
-                        (y :: ys) => Yield y ys)
-              (\step => case step of
-                          Done => 0
-                          Skip acc => acc
-                          Yield x acc => x + acc)
-              id 0 (the (List Int) [1, 2, 3, 4])
-  in res == 10
-
 ||| Canonical 2LTT audit alias
 public export
 auditConjugateDualityProof : Bool
-auditConjugateDualityProof = auditConjugateAdjunctionProof
+auditConjugateDualityProof = Stage1.ConjugateHylo.auditConjugateAdjunctionProof
 
 ||| Static audit witness verifying 2LTT strict reflection functor unwrap equivalence.
 public export
