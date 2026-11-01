@@ -2,6 +2,7 @@ module Stage1.ScaleHierarchy
 
 import Stage0.BoxInt
 import Stage0.Multiset
+import Stage0.Token
 import Stage1.UnixelFraction
 import Stage1.MaxelTransform
 import Stage1.TypeTheory.Staging
@@ -53,6 +54,19 @@ composeScaleTransitions : {0 a, b, c : ScaleLevel} ->
                           ScaleTransition a c tokA tokC
 composeScaleTransitions (MkScaleTransition f) (MkScaleTransition g) =
   MkScaleTransition (composeMaxels f g)
+
+||| Universal Monoid Extension for Scale Transitions (Rule 03 §7):
+||| Lifts an elementary token transition into an exact multiset homomorphism using liftToken.
+public export
+liftScaleTransition : (Token srcToken -> Multiset BoxInt tgtToken) ->
+                      Multiset BoxInt srcToken -> Multiset BoxInt tgtToken
+liftScaleTransition = liftToken
+
+||| QTT 0 Erased Proof: Empty multiset preservation under liftScaleTransition:
+public export
+0 prfLiftScaleTransitionZero : (f : Token srcToken -> Multiset BoxInt tgtToken) ->
+                               liftScaleTransition f ZeroM = ZeroM
+prfLiftScaleTransitionZero _ = Refl
 
 ||| 2LTT Staged Scale Transition constructor:
 ||| Lifts a static matrix transform into a staged scale transition code block at Level 1.
