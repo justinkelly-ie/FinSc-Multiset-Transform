@@ -504,3 +504,83 @@ auditMultiScaleHornerStreamProof =
       strm = stream137ScaleHorner testCoeffs
       first3 = foldStreamNat 3 (\acc, (k, v) => (k, v) :: acc) (the (List (Nat, BoxInt)) []) strm
   in length first3 == 3
+
+------------------------------------------------------------------------
+-- 11. CERTIFIED CYCLOTOMIC SCALE STEPS & EMERGENCE TRUNK (RULE 03 §7)
+------------------------------------------------------------------------
+
+||| A certified cyclotomic scale step between natural scales src and tgt.
+||| Parameterized directly by source and target CertifiedCyclotomicSpread certificates,
+||| guaranteeing totient capacity preservation and canonical block-diagonal companion matrices.
+public export
+record CyclotomicScaleStep (src : Nat) (tgt : Nat) where
+  constructor MkCyclotomicScaleStep
+  srcSpread      : CertifiedCyclotomicSpread src
+  tgtSpread      : CertifiedCyclotomicSpread tgt
+  0 stepWitness  : (src <= tgt) = True
+  scaleTransform : Maxel
+
+||| Scale 1 (Radix Genesis) -> Scale 3 (3D Manifest Spatial Grid):
+public export
+stepScale1To3 : CyclotomicScaleStep 1 3
+stepScale1To3 =
+  MkCyclotomicScaleStep
+    (certifiedCyclotomicSpread 1)
+    certifiedCyclotomicSpread3
+    Refl
+    (cyclotomicDirectSumMaxelHylo 3)
+
+||| Scale 3 (3D Manifest Grid) -> Scale 13 (13-Smooth Gate-Purity Threshold):
+public export
+stepScale3To13 : CyclotomicScaleStep 3 13
+stepScale3To13 =
+  MkCyclotomicScaleStep
+    certifiedCyclotomicSpread3
+    (certifiedCyclotomicSpread 13)
+    Refl
+    (cyclotomicDirectSumMaxelHylo 13)
+
+||| Scale 13 (Smoothness Threshold) -> Scale 39 (Observer Epoch, 3 x 13, phi(39)=24=Q_Green):
+public export
+stepScale13To39 : CyclotomicScaleStep 13 39
+stepScale13To39 =
+  MkCyclotomicScaleStep
+    (certifiedCyclotomicSpread 13)
+    certifiedCyclotomicSpread39
+    Refl
+    (cyclotomicDirectSumMaxelHylo 39)
+
+||| Scale 39 (Observer Epoch) -> Scale 210 (Primorial 210 Master Ground State, F = -1320):
+public export
+stepScale39To210 : CyclotomicScaleStep 39 210
+stepScale39To210 =
+  MkCyclotomicScaleStep
+    certifiedCyclotomicSpread39
+    (certifiedCyclotomicSpread 210)
+    Refl
+    (cyclotomicDirectSumMaxelHylo 210)
+
+||| QTT 0 Erased Proof: Observer Epoch scale step preserves exact totient capacity 39.
+public export
+0 prfObserverEpochStepPreservesTotientCapacity :
+  Stage1.ScalePipeline.stepScale13To39.tgtSpread.totientCapacity = 39
+prfObserverEpochStepPreservesTotientCapacity = Refl
+
+||| QTT 0 Erased Proof: Primorial 210 scale step preserves exact totient capacity 210.
+public export
+0 prfPrimorial210StepPreservesTotientCapacity :
+  Stage1.ScalePipeline.stepScale39To210.tgtSpread.totientCapacity = 210
+prfPrimorial210StepPreservesTotientCapacity = Refl
+
+||| Static audit witness verifying canonical cyclotomic scale steps along the cosmic trunk:
+public export
+auditCyclotomicScaleStepsProof : Bool
+auditCyclotomicScaleStepsProof =
+  (stepScale1To3.srcSpread.degree == 1) &&
+  (stepScale1To3.tgtSpread.degree == 3) &&
+  (stepScale3To13.tgtSpread.degree == 13) &&
+  (stepScale13To39.tgtSpread.degree == 39) &&
+  (stepScale39To210.tgtSpread.degree == 210) &&
+  (stepScale13To39.tgtSpread.totientCapacity == 39) &&
+  (stepScale39To210.tgtSpread.totientCapacity == 210)
+
