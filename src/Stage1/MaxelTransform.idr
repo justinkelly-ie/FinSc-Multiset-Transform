@@ -57,6 +57,12 @@ public export
   show (MkMaxelTransform sec frac (MkBox tPairs)) =
     "MaxelTransform(" ++ show sec ++ ", " ++ show tPairs ++ ")"
 
+public export
+(Eq a, Eq b) => Eq (MaxelTransform a b) where
+  (MkMaxelTransform s1 f1 b1) == (MkMaxelTransform s2 f2 b2) =
+    s1 == s2 && f1 == f2 && b1 == b2
+
+
 ||| 2LTT Type-Indexed Maxel Transform carrying its FundamentalGeometry metric signature at Level 1.
 public export
 record TypedMaxelTransform (0 g : FundamentalGeometry) (a : Type) (b : Type) where

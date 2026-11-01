@@ -33,6 +33,11 @@ record ScaleTransition (src : ScaleLevel) (tgt : ScaleLevel) (srcToken : Type) (
   constructor MkScaleTransition
   transform : MaxelTransform srcToken tgtToken
 
+public export
+(Eq srcToken, Eq tgtToken) => Eq (ScaleTransition src tgt srcToken tgtToken) where
+  (MkScaleTransition t1) == (MkScaleTransition t2) = t1 == t2
+
+
 ||| Identity scale transition for a scale level.
 public export
 identityScaleTransition : {0 srcToken : Type} -> ScaleTransition src src srcToken srcToken

@@ -299,9 +299,39 @@ sf4_MoleculeToBiomodule : ScaleTransition MoleculeLevel CellLevel MoleculeToken 
 sf4_MoleculeToBiomodule = MkScaleTransition t4_MoleculeToBiomodule
 
 ||| End-to-End Type-Safe ScaleTransition Pipeline: Subatomic -> Cell
+||| Canonical 4-stage condensed matter scale path: Subatomic -> Hadron -> Atom -> Molecule -> Cell
+public export
+canonicalCondensedScalePath : ScalePath SubatomicLevel CellLevel ColorCharge BiomoduleToken
+canonicalCondensedScalePath =
+  StepScalePath sf1_QuarkToHadron
+    (StepScalePath sf2_HadronToAtom
+      (StepScalePath sf3_AtomToMolecule
+        (StepScalePath sf4_MoleculeToBiomodule
+          (IdScalePath CellLevel BiomoduleToken))))
+
 public export
 sfTotalFunctorialPipeline : ScaleTransition SubatomicLevel CellLevel ColorCharge BiomoduleToken
-sfTotalFunctorialPipeline = MkScaleTransition tTotalFunctorialPipeline
+sfTotalFunctorialPipeline = collapseScalePath canonicalCondensedScalePath
+
+||| 2LTT Staged End-to-End Condensed Matter Pipeline:
+||| Compiles the 4-stage ScalePath into a single composite functor at Level 1 with zero runtime overhead.
+public export
+stagedCondensedPipeline : Code (ScaleTransition SubatomicLevel CellLevel ColorCharge BiomoduleToken)
+stagedCondensedPipeline = stagedCompileScalePath (quote canonicalCondensedScalePath)
+
+||| Staged evaluation of condensed pipeline:
+public export
+evalStagedCondensedPipeline : ScaleTransition SubatomicLevel CellLevel ColorCharge BiomoduleToken
+evalStagedCondensedPipeline = splice stagedCondensedPipeline
+
+||| QTT 0 Erased Proof Witness: Condensed Pipeline Staged Compilation Soundness
+public export
+0 prfCondensedPipelineSoundness :
+  splice Stage1.ScalePipeline.stagedCondensedPipeline =
+    collapseScalePath Stage1.ScalePipeline.canonicalCondensedScalePath
+prfCondensedPipelineSoundness = Refl
+
+
 
 ------------------------------------------------------------------------
 -- 8. PIPELINE APPLICATION OPERATOR, DEFORESTED SCALE CHAIN & INVARIANT AUDIT
