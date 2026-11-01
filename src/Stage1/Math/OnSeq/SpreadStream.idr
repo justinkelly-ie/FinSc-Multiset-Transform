@@ -47,12 +47,43 @@ divFactorToMultiset d =
   let (_ ** f) = ciglerHerbigAuxiliary d
   in AddFactor f EmptyBag
 
-||| Constructs an auxiliary Goh polynomial factor Phi_k(s) of degree k.
+||| Classifies a divisor scale index into its 4Geometries FundamentalGeometry sector:
+||| - Divisors divisible by 3 are Elliptic (Blue, Q_Blue = 25, 3D Spatial Grid)
+||| - Even divisors not divisible by 3 are Hyperbolic (Red, Q_Red = 7, 2D Phase ROM)
+||| - Odd divisors not divisible by 3 (including 5) are Parabolic (Green, Q_Green = 24, Dissipation Sink)
 public export
-makeGohFactor : (k : Nat) -> GohAuxiliary k
-makeGohFactor k =
-  let coeffs = Data.Vect.replicate (S k) (mkUnixelFraction (intToBoxInt 1) 1)
-  in Phi coeffs
+classifyDivisorSector : Nat -> FundamentalGeometry
+classifyDivisorSector d =
+  if snd (natDivMod d 3) == 0 then EllipticGeom
+  else if not (snd (natHalfAndOdd d)) then HyperbolicGeom
+  else ParabolicGeom
+
+||| Dependently typed record certifying a Divisor Factor across 2LTT levels.
+||| Statically bundles:
+||| 1. Divisor origin scale index d
+||| 2. Irreducible Cigler-Herbig factor of algebraic degree phi(d)
+||| 3. FundamentalGeometry sector classification
+public export
+record GohDivisorFactor (d : Nat) where
+  constructor MkGohDivisorFactor
+  divisor        : Nat
+  0 divMatch     : divisor = d
+  factorDegree   : Nat
+  auxiliary      : GohAuxiliary factorDegree
+  geometrySector : FundamentalGeometry
+
+||| Constructs the canonical GohDivisorFactor for divisor scale index d:
+public export
+gohDivisorFactor : (d : Nat) -> GohDivisorFactor d
+gohDivisorFactor d =
+  let (deg ** aux) = ciglerHerbigAuxiliary d
+  in MkGohDivisorFactor d Refl deg aux (classifyDivisorSector d)
+
+||| Unfolds degree N into a deforested stream of dependently certified GohDivisorFactors:
+public export
+streamDivisorCertifiedFactors : (n : Nat) -> FusedStream (d : Nat ** GohDivisorFactor d)
+streamDivisorCertifiedFactors n =
+  mapStream (\d => (d ** gohDivisorFactor d)) (divisorStream n)
 
 ||| Fully deforested unfolding of frequency index n into Goh factors without intermediate List buffers.
 public export
@@ -381,7 +412,7 @@ computeChromogeometricBudgetDeforested strm =
     step : (Nat, Nat, Nat) -> GohMultiset -> (Nat, Nat, Nat)
     step (b, r, g) EmptyBag = (b, r, g)
     step (b, r, g) (AddFactorM {deg} _ m rest) =
-      let degWeight = totient deg * boxNatToNat m
+      let degWeight = deg * boxNatToNat m
           (b', r', g') =
             if snd (natDivMod deg 3) == 0 then (b + degWeight, r, g)
             else if not (snd (natHalfAndOdd deg)) then (b, r + degWeight, g)
@@ -389,9 +420,9 @@ computeChromogeometricBudgetDeforested strm =
       in step (b', r', g') rest
     step (b, r, g) (AddFactor {deg} _ rest) =
       let (b', r', g') =
-            if snd (natDivMod deg 3) == 0 then (b + totient deg, r, g)
-            else if not (snd (natHalfAndOdd deg)) then (b, r + totient deg, g)
-            else (b, r, g + totient deg)
+            if snd (natDivMod deg 3) == 0 then (b + deg, r, g)
+            else if not (snd (natHalfAndOdd deg)) then (b, r + deg, g)
+            else (b, r, g + deg)
       in step (b', r', g') rest
 
 ||| Computes exact ChromogeometricSectorBudget from a list of GohMultiset factor bags by streaming:
@@ -399,15 +430,32 @@ public export
 computeChromogeometricBudget : List GohMultiset -> ChromogeometricSectorBudget
 computeChromogeometricBudget bags = computeChromogeometricBudgetDeforested (stream bags)
 
-||| Streams Goh factor bags of degree d across all divisors d | n in O(1) auxiliary registers.
-public export
-streamDivisorGohFactors : Nat -> FusedStream GohMultiset
-streamDivisorGohFactors n = mapStream (\d => AddFactor (makeGohFactor d) EmptyBag) (divisorStream n)
-
 ||| Streams authentic Cigler-Herbig irreducible Goh factor bags across all divisors d | n in O(1) auxiliary registers.
 public export
 streamDivisorCiglerHerbigFactors : Nat -> FusedStream GohMultiset
 streamDivisorCiglerHerbigFactors n = mapStream divFactorToMultiset (divisorStream n)
+
+||| Streams Goh factor bags across all divisors d | n in O(1) auxiliary registers using authentic Cigler-Herbig factors.
+public export
+streamDivisorGohFactors : Nat -> FusedStream GohMultiset
+streamDivisorGohFactors = streamDivisorCiglerHerbigFactors
+
+||| Computes exact ChromogeometricSectorBudget directly from a deforested stream of divisor scale indices.
+||| Uses Gauss's Totient Divisor Sum Identity: sum_{d | n} phi(d) = n.
+public export
+computeChromogeometricBudgetFromDivisors : FusedStream Nat -> ChromogeometricSectorBudget
+computeChromogeometricBudgetFromDivisors strm =
+  let (b, r, g) = foldStreamNat (boxNatToNat masterSubstrateGohFuel) step (Z, Z, Z) strm
+  in MkChromogeometricSectorBudget b r g
+  where
+    step : (Nat, Nat, Nat) -> Nat -> (Nat, Nat, Nat)
+    step (b, r, g) d =
+      let cap = totientNat d
+      in case classifyDivisorSector d of
+           EllipticGeom   => (b + cap, r, g)
+           HyperbolicGeom => (b, r + cap, g)
+           ParabolicGeom  => (b, r, g + cap)
+           SubstrateGeom  => (b, r, g + cap)
 
 ||| Verifies that Chromogeometric Sector Budget total capacity equals dimension N (b + r + g = N).
 public export
@@ -415,8 +463,8 @@ prop_chromogeometricBudgetConservation : Nat -> Bool
 prop_chromogeometricBudgetConservation Z = True
 prop_chromogeometricBudgetConservation (S n) =
   let dim = S n
-      strm = streamDivisorGohFactors dim
-      budget = computeChromogeometricBudgetDeforested strm
+      strm = divisorStream dim
+      budget = computeChromogeometricBudgetFromDivisors strm
   in totalChromogeometricCapacity budget == dim
 
 
@@ -452,8 +500,8 @@ classifyStageGeometry (MkLevelBox (MkBox ((g, _) :: _))) = classifySpreadStreamS
 public export
 prop_primorial210UnfoldingInvariance : Bool
 prop_primorial210UnfoldingInvariance =
-  let strm = streamDivisorGohFactors 210
-      budget = computeChromogeometricBudgetDeforested strm
+  let strm = divisorStream 210
+      budget = computeChromogeometricBudgetFromDivisors strm
       primBudget = MkPrimorial210UnfoldingBudget budget.blueElliptic budget.redHyperbolic budget.greenParabolic
   in totalPrimorial210Capacity primBudget == 210
 
