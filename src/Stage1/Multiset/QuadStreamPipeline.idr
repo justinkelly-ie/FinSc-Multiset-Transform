@@ -345,3 +345,34 @@ public export
   (splice (compileDissipativePipelineCode fuel (quote r))) qs = routeDissipativePipelineNat fuel r qs
 prfCompileDissipativeEquiv _ _ _ = Refl
 
+--------------------------------------------------------------------------------
+-- 5. DEFORESTED COORDINATE QUAD-STREAM TRANSDUCTION
+--------------------------------------------------------------------------------
+
+||| Transduces a deforested stream of coordinate pairs (x_k, y_k) directly into
+||| QuadStreamMultiset payloads in O(1) auxiliary registers.
+public export
+fusedCoordinateQuadStreamPipeline :
+  FusedStream (BoxInt, BoxInt) ->
+  FusedStream (QuadStreamMultiset BoxInt)
+fusedCoordinateQuadStreamPipeline = mapStream (\(x, y) => quadStreamFromLattice x y)
+
+||| Audits the coordinate-to-QuadStream transduction pipeline satisfying 4-Geometry completion:
+public export
+auditCoordinateQuadStreamPipelineProof : Bool
+auditCoordinateQuadStreamPipelineProof =
+  let coords = the (List (BoxInt, BoxInt))
+        [ (intToBoxInt 1, intToBoxInt 1)
+        , (intToBoxInt 4, intToBoxInt 3)
+        , (intToBoxInt 15, intToBoxInt 10)
+        ]
+      streamC = stream coords
+      quadS = fusedCoordinateQuadStreamPipeline streamC
+      checker = \acc, qs =>
+        let qb = multisetSum qs.ellipticStream
+            qr = multisetSum qs.hyperbolicStream
+            qg = multisetSum qs.parabolicStream
+            qsVal = multisetSum qs.substrateStream
+        in (intToBoxInt 2 * qsVal == qb + qr + intToBoxInt 2 * qg) && acc
+  in foldStreamNat 4 checker True quadS
+
