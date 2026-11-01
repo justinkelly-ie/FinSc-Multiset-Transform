@@ -211,7 +211,7 @@ actTransformMaxel (MkMaxelTransform _ _ (MkBox tPairs)) m =
 public export
 maxelToTransform : MetricSector -> UnixelFraction -> Maxel -> MaxelTransform Unixel Unixel
 maxelToTransform sec frac m =
-  let pairs = foldBoxTreeR (\px, w, acc => ((mkUnixel (pixelRow px), mkUnixel (pixelCol px)), w) :: acc) [] m
+  let pairs = foldBoxTreeR (\px, w, acc => (pixelSplitUnixels px, w) :: acc) [] m
   in MkMaxelTransform sec frac (MkBox pairs)
 
 ||| Converts a MaxelTransform back into a canonical 2D Maxel matrix.
@@ -219,7 +219,7 @@ public export
 transformToMaxel : MaxelTransform Unixel Unixel -> Maxel
 transformToMaxel (MkMaxelTransform _ _ (MkBox tPairs)) =
   foldl (\acc, ((u1, u2), w) =>
-    let p = mkCell2 (unwrapUnixel u1) (unwrapUnixel u2)
+    let p = unixelPairToPixel u1 u2
     in if boxIsZero w then acc else setBoxTree p (lookupCellMultiset p acc + w) acc) emptyCellMultiset tPairs
 
 ------------------------------------------------------------------------
