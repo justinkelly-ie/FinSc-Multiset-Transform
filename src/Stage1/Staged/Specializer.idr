@@ -99,6 +99,38 @@ stageChain4 : (Eq a, Eq b, Eq c, Eq d, Eq e) =>
 stageChain4 qT1 qT2 qT3 qT4 =
   stageComposedPipeline (stageChain3 qT1 qT2 qT3) qT4
 
+||| Statically pre-composes an N-stage homogeneous scale pipeline: Tn ∘ ... ∘ T1.
+||| Executes pipeline folding at Level 1 under structural fuel bounds with zero runtime intermediate splices.
+public export
+stageChainN : (fuel : Nat) -> Eq a =>
+              Lift (MaxelTransform a a) ->
+              List (Lift (MaxelTransform a a)) ->
+              Code (MaxelTransform a a)
+stageChainN 0 base _ = base
+stageChainN (S k) base [] = base
+stageChainN (S k) base (t :: ts) =
+  stageChainN k (stageComposedPipeline base t) ts
+
+||| Staged evaluation of N-stage scale pipeline:
+public export
+evalStageChainN : (fuel : Nat) -> Eq a =>
+                  Lift (MaxelTransform a a) ->
+                  List (Lift (MaxelTransform a a)) ->
+                  MaxelTransform a a
+evalStageChainN fuel base ts = splice (stageChainN fuel base ts)
+
+||| QTT 0 Erased Proof Witness: stageChainN single-step composition
+public export
+0 prfStageChainN1 : Eq a => (t1, t2 : MaxelTransform a a) ->
+                    splice (stageChainN 1 (quote t1) [quote t2]) = composeMaxels t1 t2
+prfStageChainN1 _ _ = Refl
+
+||| QTT 0 Erased Proof Witness: stageChainN two-step composition
+public export
+0 prfStageChainN2 : Eq a => (t1, t2, t3 : MaxelTransform a a) ->
+                    splice (stageChainN 2 (quote t1) [quote t2, quote t3]) = composeMaxels (composeMaxels t1 t2) t3
+prfStageChainN2 _ _ _ = Refl
+
 ------------------------------------------------------------------------
 -- 3. UNROLLED PUSHFORWARD COMPILATION FOR STATIC INCIDENCE MATRICES
 ------------------------------------------------------------------------

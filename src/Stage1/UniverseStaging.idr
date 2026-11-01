@@ -61,6 +61,39 @@ evalStagedStepUniverseLQTT : {vm, de, dm, k : Nat} ->
 evalStagedStepUniverseLQTT qState qMatter =
   spliceLinear (stagedStepUniverseLQTT qState qMatter)
 
+||| 2LTT Staged Triad Genesis Specialization under strict LQTT linearity:
+public export
+stagedStepGenesisTriadLQTT : {vm, de, dm, kR, kG, kB : Nat} ->
+                             (1 qState : LinearLift (UniverseState vm de dm)) ->
+                             Lift (Vect kR BoxInt) ->
+                             Lift (Vect kG BoxInt) ->
+                             Lift (Vect kB BoxInt) ->
+                             LinearLift (UniverseState (((vm + kR) + kG) + kB) de (S (S (S dm))))
+stagedStepGenesisTriadLQTT qState qR qG qB =
+  stagedStepUniverseLQTT (stagedStepUniverseLQTT (stagedStepUniverseLQTT qState qR) qG) qB
+
+||| Staged evaluation of Triad Genesis under strict LQTT linearity:
+public export
+evalStagedStepGenesisTriadLQTT : {vm, de, dm, kR, kG, kB : Nat} ->
+                                 (1 qState : LinearLift (UniverseState vm de dm)) ->
+                                 Lift (Vect kR BoxInt) ->
+                                 Lift (Vect kG BoxInt) ->
+                                 Lift (Vect kB BoxInt) ->
+                                 UniverseState (((vm + kR) + kG) + kB) de (S (S (S dm)))
+evalStagedStepGenesisTriadLQTT qState qR qG qB =
+  spliceLinear (stagedStepGenesisTriadLQTT qState qR qG qB)
+
+||| QTT 0 Erased Proof Witness: Triad Genesis Staged Equivalence
+public export
+0 prfStagedStepGenesisTriadLQTT : {vm, de, dm, kR, kG, kB : Nat} ->
+                                 (state : UniverseState vm de dm) ->
+                                 (mR : Vect kR BoxInt) ->
+                                 (mG : Vect kG BoxInt) ->
+                                 (mB : Vect kB BoxInt) ->
+                                 spliceLinear (stagedStepGenesisTriadLQTT (quoteLinear state) (quote mR) (quote mG) (quote mB)) =
+                                   stepUniverseLinear (stepUniverseLinear (stepUniverseLinear state mR) mG) mB
+prfStagedStepGenesisTriadLQTT _ _ _ _ = Refl
+
 ||| Linear 2LTT (LQTT) Direct Linear Staged Transition:
 public export
 stagedStepUniverseDirectLQTT : {vm, de, dm, k : Nat} ->
