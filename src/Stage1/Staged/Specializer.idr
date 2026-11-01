@@ -132,6 +132,56 @@ public export
 prfStageChainN2 _ _ _ = Refl
 
 ------------------------------------------------------------------------
+-- 2B. THE FREE MONOID PIPELINE ALGEBRA (PipelineWord)
+------------------------------------------------------------------------
+
+||| A word in the free monoid of homogeneous MaxelTransform endomorphisms.
+||| Replaces ad-hoc pipeline chaining with an inductive algebraic syntax tree.
+public export
+data PipelineWord : Type -> Type where
+  EmptyWord  : PipelineWord a
+  GenWord    : MaxelTransform a a -> PipelineWord a
+  ConcatWord : PipelineWord a -> PipelineWord a -> PipelineWord a
+
+||| Evaluates and collapses a PipelineWord down to a single MaxelTransform:
+public export
+collapsePipelineWord : (fuel : Nat) -> Eq a =>
+                       MaxelTransform a a -> PipelineWord a -> MaxelTransform a a
+collapsePipelineWord Z base _ = base
+collapsePipelineWord (S _) base EmptyWord = base
+collapsePipelineWord (S _) base (GenWord t) = composeMaxels base t
+collapsePipelineWord (S f) base (ConcatWord w1 w2) =
+  let mid = collapsePipelineWord f base w1
+  in collapsePipelineWord f mid w2
+
+||| 2LTT Staged Free Monoid Word Evaluation:
+||| Evaluates words in the free pipeline monoid at Level 1, returning a compiled Code.
+public export
+stagedCompileWord : (fuel : Nat) -> Eq a =>
+                    Lift (MaxelTransform a a) ->
+                    Lift (PipelineWord a) ->
+                    Code (MaxelTransform a a)
+stagedCompileWord fuel qBase qWord =
+  quote (collapsePipelineWord fuel (splice qBase) (splice qWord))
+
+||| Staged evaluation of pipeline word:
+public export
+evalStagedCompileWord : (fuel : Nat) -> Eq a =>
+                        Lift (MaxelTransform a a) ->
+                        Lift (PipelineWord a) ->
+                        MaxelTransform a a
+evalStagedCompileWord fuel qBase qWord =
+  splice (stagedCompileWord fuel qBase qWord)
+
+||| QTT 0 Erased Proof Witness: Pipeline Word Compilation Invariant
+public export
+0 prfStagedCompileWord : (fuel : Nat) -> Eq a =>
+                         (base : MaxelTransform a a) ->
+                         (w : PipelineWord a) ->
+                         splice (stagedCompileWord fuel (quote base) (quote w)) = collapsePipelineWord fuel base w
+prfStagedCompileWord _ _ _ = Refl
+
+------------------------------------------------------------------------
 -- 3. UNROLLED PUSHFORWARD COMPILATION FOR STATIC INCIDENCE MATRICES
 ------------------------------------------------------------------------
 

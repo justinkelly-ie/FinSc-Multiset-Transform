@@ -94,6 +94,64 @@ public export
                                    stepUniverseLinear (stepUniverseLinear (stepUniverseLinear state mR) mG) mB
 prfStagedStepGenesisTriadLQTT _ _ _ _ = Refl
 
+------------------------------------------------------------------------
+-- 1B. THE LINEAR 2LTT COSMOLOGICAL TRAJECTORY ALGEBRA (LQTTTrajectory)
+------------------------------------------------------------------------
+
+||| An inductive algebraic specification of cosmological evolution:
+||| Encapsulates an arbitrary sequence of matter injections under linear state evolution,
+||| indexed by initial configuration (vm, de, dm) and final configuration (vm', dm').
+public export
+data UniverseTrajectory : (vm : Nat) -> (de : Nat) -> (dm : Nat) -> (vm' : Nat) -> (dm' : Nat) -> Type where
+  IdTrajectory   : UniverseTrajectory vm de dm vm dm
+  StepTrajectory : {vm, de, dm, vm', dm', k : Nat} ->
+                   UniverseTrajectory vm de dm vm' dm' ->
+                   Vect k BoxInt ->
+                   UniverseTrajectory vm de dm (vm' + k) (S dm')
+
+||| Helper to construct a single-step trajectory from an initial universe state:
+public export
+singleStepTrajectory : {vm, de, dm, k : Nat} -> Vect k BoxInt -> UniverseTrajectory vm de dm (vm + k) (S dm)
+singleStepTrajectory m = StepTrajectory IdTrajectory m
+
+||| Linearly executes an entire cosmological trajectory under strict QTT linearity (multiplicity 1):
+public export
+runTrajectoryLinear : {vm, de, dm, vm', dm' : Nat} ->
+                      (1 state : UniverseState vm de dm) ->
+                      UniverseTrajectory vm de dm vm' dm' ->
+                      UniverseState vm' de dm'
+runTrajectoryLinear state IdTrajectory = state
+runTrajectoryLinear state (StepTrajectory rest m) =
+  stepUniverseLinear (runTrajectoryLinear state rest) m
+
+||| 2LTT Staged Linear Trajectory Runner under strict LQTT linearity:
+||| Consumes the linear state and the lifted trajectory at Level 1 with zero runtime overhead.
+public export
+stagedRunTrajectoryLQTT : {vm, de, dm, vm', dm' : Nat} ->
+                          (1 qState : LinearLift (UniverseState vm de dm)) ->
+                          Lift (UniverseTrajectory vm de dm vm' dm') ->
+                          LinearLift (UniverseState vm' de dm')
+stagedRunTrajectoryLQTT qState qTraj =
+  quoteLinear (runTrajectoryLinear (spliceLinear qState) (splice qTraj))
+
+||| Staged evaluation of cosmological trajectory:
+public export
+evalStagedRunTrajectoryLQTT : {vm, de, dm, vm', dm' : Nat} ->
+                              (1 qState : LinearLift (UniverseState vm de dm)) ->
+                              Lift (UniverseTrajectory vm de dm vm' dm') ->
+                              UniverseState vm' de dm'
+evalStagedRunTrajectoryLQTT qState qTraj =
+  spliceLinear (stagedRunTrajectoryLQTT qState qTraj)
+
+||| QTT 0 Erased Proof Witness: Trajectory Execution Invariant
+public export
+0 prfStagedRunTrajectoryLQTT : {vm, de, dm, vm', dm' : Nat} ->
+                              (state : UniverseState vm de dm) ->
+                              (traj : UniverseTrajectory vm de dm vm' dm') ->
+                              spliceLinear (stagedRunTrajectoryLQTT (quoteLinear state) (quote traj)) =
+                                runTrajectoryLinear state traj
+prfStagedRunTrajectoryLQTT _ _ = Refl
+
 ||| Linear 2LTT (LQTT) Direct Linear Staged Transition:
 public export
 stagedStepUniverseDirectLQTT : {vm, de, dm, k : Nat} ->
