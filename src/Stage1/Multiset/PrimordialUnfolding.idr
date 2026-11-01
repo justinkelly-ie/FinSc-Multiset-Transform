@@ -115,6 +115,29 @@ auditDynamicEpochTriadIdentityProof k =
       rhs = addBox (mulBox t.redQ t.redQ) (mulBox t.greenQ t.greenQ)
   in boxEq lhs rhs
 
+||| Computes the dynamic Substrate Quadrance Q_Substrate = x^2 + 2xy at cosmological epoch index k and super-epoch.
+public export
+epochSubstrateQuadranceReentrant : (superEp : Nat) -> (k : Nat) -> BoxInt
+epochSubstrateQuadranceReentrant superEp k =
+  let (x, y) = epochPythagoreanCoordinateReentrant superEp k
+  in addBox (mulBox x x) (mulBox (intToBoxInt 2) (mulBox x y))
+
+||| Canonical single-eon projection for Substrate Quadrance.
+public export
+epochSubstrateQuadrance : Nat -> BoxInt
+epochSubstrateQuadrance = epochSubstrateQuadranceReentrant 0
+
+||| Proves that the dynamic Substrate Quadrance satisfies 2 * Q_Substrate == Q_Blue + Q_Red + 2 * Q_Green.
+public export
+auditEpochSubstrateQuadranceIdentity : (superEp : Nat) -> (k : Nat) -> Bool
+auditEpochSubstrateQuadranceIdentity superEp k =
+  let qSub = epochSubstrateQuadranceReentrant superEp k
+      triad = epochTriadQuadranceReentrant superEp k
+      twoQSub = mulBox (intToBoxInt 2) qSub
+      twoQGreen = mulBox (intToBoxInt 2) triad.greenQ
+      rhsSum = addBox (addBox triad.blueQ triad.redQ) twoQGreen
+  in boxEq twoQSub rhsSum
+
 ||| The canonical Pythagorean Fixed Point (4, 3) generating the fundamental triad (25, 7, 24).
 public export
 canonicalPythagoreanTriad : TriadQuadrance
