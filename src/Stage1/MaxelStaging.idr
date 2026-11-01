@@ -13,70 +13,100 @@ import Data.Vect
 ------------------------------------------------------------------------
 
 ||| 2LTT Staged Maxel Multiplication (discrete matrix multiplication):
-||| Evaluates discrete matrix multiplication at Stage 1 (U_1) and splices to Stage 0 (U_0).
+||| Evaluates discrete matrix multiplication at Stage 1 (U_1) and returns reified Code at Level 1.
 %inline public export
-stagedMaxelMul : Lift Maxel -> Lift Maxel -> Maxel
-stagedMaxelMul m1 m2 = mulMaxel (splice m1) (splice m2)
+stagedMaxelMul : Lift Maxel -> Lift Maxel -> Code Maxel
+stagedMaxelMul m1 m2 = quote (mulMaxel (splice m1) (splice m2))
+
+||| Staged evaluation of Maxel multiplication:
+%inline public export
+evalStagedMaxelMul : Lift Maxel -> Lift Maxel -> Maxel
+evalStagedMaxelMul m1 m2 = splice (stagedMaxelMul m1 m2)
 
 ||| QTT 0 Erased Proof Witness: Staged Maxel Multiplication Invariant
 public export
 0 prfStagedMaxelMul : (m1 : Maxel) -> (m2 : Maxel) ->
-                      stagedMaxelMul (quote m1) (quote m2) = mulMaxel m1 m2
+                      splice (stagedMaxelMul (quote m1) (quote m2)) = mulMaxel m1 m2
 prfStagedMaxelMul _ _ = Refl
 
 ||| 2LTT Staged Maxel Addition: Concatenates pixel multisets at Stage 1.
 %inline public export
-stagedMaxelAdd : Lift Maxel -> Lift Maxel -> Maxel
-stagedMaxelAdd m1 m2 = addCellMultiset (splice m1) (splice m2)
+stagedMaxelAdd : Lift Maxel -> Lift Maxel -> Code Maxel
+stagedMaxelAdd m1 m2 = quote (addCellMultiset (splice m1) (splice m2))
+
+||| Staged evaluation of Maxel addition:
+%inline public export
+evalStagedMaxelAdd : Lift Maxel -> Lift Maxel -> Maxel
+evalStagedMaxelAdd m1 m2 = splice (stagedMaxelAdd m1 m2)
 
 ||| QTT 0 Erased Proof Witness: Staged Maxel Addition Invariant
 public export
 0 prfStagedMaxelAdd : (m1 : Maxel) -> (m2 : Maxel) ->
-                      stagedMaxelAdd (quote m1) (quote m2) = addCellMultiset m1 m2
+                      splice (stagedMaxelAdd (quote m1) (quote m2)) = addCellMultiset m1 m2
 prfStagedMaxelAdd _ _ = Refl
 
 ||| 2LTT Staged Maxel Scalar Scaling.
 %inline public export
-stagedMaxelScale : Lift BoxInt -> Lift Maxel -> Maxel
-stagedMaxelScale s m = scaleCellMultiset (splice s) (splice m)
+stagedMaxelScale : Lift BoxInt -> Lift Maxel -> Code Maxel
+stagedMaxelScale s m = quote (scaleCellMultiset (splice s) (splice m))
+
+||| Staged evaluation of Maxel scaling:
+%inline public export
+evalStagedMaxelScale : Lift BoxInt -> Lift Maxel -> Maxel
+evalStagedMaxelScale s m = splice (stagedMaxelScale s m)
 
 ||| QTT 0 Erased Proof Witness: Staged Maxel Scaling Invariant
 public export
 0 prfStagedMaxelScale : (s : BoxInt) -> (m : Maxel) ->
-                        stagedMaxelScale (quote s) (quote m) = scaleCellMultiset s m
+                        splice (stagedMaxelScale (quote s) (quote m)) = scaleCellMultiset s m
 prfStagedMaxelScale _ _ = Refl
 
 ||| 2LTT Staged Matrix-Vector Contraction (actMaxelVexel).
 %inline public export
-stagedActMaxelVexel : Lift Maxel -> Lift Vexel -> Vexel
-stagedActMaxelVexel m v = actMaxelVexel (splice m) (splice v)
+stagedActMaxelVexel : Lift Maxel -> Lift Vexel -> Code Vexel
+stagedActMaxelVexel m v = quote (actMaxelVexel (splice m) (splice v))
+
+||| Staged evaluation of matrix-vector contraction:
+%inline public export
+evalStagedActMaxelVexel : Lift Maxel -> Lift Vexel -> Vexel
+evalStagedActMaxelVexel m v = splice (stagedActMaxelVexel m v)
 
 ||| QTT 0 Erased Proof Witness: Staged Action Invariant
 public export
 0 prfStagedActMaxelVexel : (m : Maxel) -> (v : Vexel) ->
-                           stagedActMaxelVexel (quote m) (quote v) = actMaxelVexel m v
+                           splice (stagedActMaxelVexel (quote m) (quote v)) = actMaxelVexel m v
 prfStagedActMaxelVexel _ _ = Refl
 
 ||| 2LTT Staged Maxel Canonicalization: Aggregates duplicates and eliminates zero-weight entries.
 %inline public export
-stagedCanonicalizeMaxel : Lift Maxel -> Maxel
-stagedCanonicalizeMaxel m = canonicalizeCellMultiset (splice m)
+stagedCanonicalizeMaxel : Lift Maxel -> Code Maxel
+stagedCanonicalizeMaxel m = quote (canonicalizeCellMultiset (splice m))
+
+||| Staged evaluation of Maxel canonicalization:
+%inline public export
+evalStagedCanonicalizeMaxel : Lift Maxel -> Maxel
+evalStagedCanonicalizeMaxel m = splice (stagedCanonicalizeMaxel m)
 
 ||| QTT 0 Erased Proof Witness: Staged Canonicalization Invariant
 public export
 0 prfStagedCanonicalizeMaxel : (m : Maxel) ->
-                               stagedCanonicalizeMaxel (quote m) = canonicalizeCellMultiset m
+                               splice (stagedCanonicalizeMaxel (quote m)) = canonicalizeCellMultiset m
 prfStagedCanonicalizeMaxel _ = Refl
 
 ||| 2LTT Staged Total Weight Evaluation.
 %inline public export
-stagedTotalMaxelWeight : Lift Maxel -> BoxInt
-stagedTotalMaxelWeight m = totalCellMultisetWeight (splice m)
+stagedTotalMaxelWeight : Lift Maxel -> Code BoxInt
+stagedTotalMaxelWeight m = quote (totalCellMultisetWeight (splice m))
+
+||| Staged evaluation of total weight:
+%inline public export
+evalStagedTotalMaxelWeight : Lift Maxel -> BoxInt
+evalStagedTotalMaxelWeight m = splice (stagedTotalMaxelWeight m)
 
 ||| QTT 0 Erased Proof Witness: Staged Weight Invariant
 public export
 0 prfStagedTotalMaxelWeight : (m : Maxel) ->
-                              stagedTotalMaxelWeight (quote m) = totalCellMultisetWeight m
+                              splice (stagedTotalMaxelWeight (quote m)) = totalCellMultisetWeight m
 prfStagedTotalMaxelWeight _ = Refl
 
 ------------------------------------------------------------------------
@@ -85,20 +115,35 @@ prfStagedTotalMaxelWeight _ = Refl
 
 ||| 2LTT Staged N x N Matrix Multiplication:
 ||| Evaluates dimension-indexed matrix multiplication at compile time (Stage 1)
-||| via deforested dot products and splices to Stage 0.
+||| via deforested dot products and returns reified Code at Level 1.
 public export
-stagedMatrixMul : Num a => {n : Nat} -> Lift (Vect n (Vect n a)) -> Lift (Vect n (Vect n a)) -> Vect n (Vect n a)
-stagedMatrixMul matA matB = stagedUnrollMatMul (splice matA) (splice matB)
+stagedMatrixMul : Num a => {n : Nat} -> Lift (Vect n (Vect n a)) -> Lift (Vect n (Vect n a)) -> Code (Vect n (Vect n a))
+stagedMatrixMul matA matB = quote (stagedUnrollMatMul (splice matA) (splice matB))
+
+||| Staged evaluation of matrix multiplication:
+public export
+evalStagedMatrixMul : Num a => {n : Nat} -> Lift (Vect n (Vect n a)) -> Lift (Vect n (Vect n a)) -> Vect n (Vect n a)
+evalStagedMatrixMul matA matB = splice (stagedMatrixMul matA matB)
 
 ||| 2LTT Staged N x N Matrix-Vector Contraction:
 public export
-stagedMatrixVec : Num a => {n : Nat} -> Lift (Vect n (Vect n a)) -> Lift (Vect n a) -> Vect n a
-stagedMatrixVec mat v = stagedUnrollMatVec (splice mat) (splice v)
+stagedMatrixVec : Num a => {n : Nat} -> Lift (Vect n (Vect n a)) -> Lift (Vect n a) -> Code (Vect n a)
+stagedMatrixVec mat v = quote (stagedUnrollMatVec (splice mat) (splice v))
+
+||| Staged evaluation of matrix-vector contraction:
+public export
+evalStagedMatrixVec : Num a => {n : Nat} -> Lift (Vect n (Vect n a)) -> Lift (Vect n a) -> Vect n a
+evalStagedMatrixVec mat v = splice (stagedMatrixVec mat v)
 
 ||| 2LTT Staged N x N Matrix Power:
 public export
-stagedMatrixPower : Num a => (fuel : Nat) -> {n : Nat} -> Lift (Vect n (Vect n a)) -> Nat -> Vect n (Vect n a)
-stagedMatrixPower fuel mat exp = stagedFastMatPower fuel (splice mat) exp
+stagedMatrixPower : Num a => (fuel : Nat) -> {n : Nat} -> Lift (Vect n (Vect n a)) -> Nat -> Code (Vect n (Vect n a))
+stagedMatrixPower fuel mat exp = quote (stagedFastMatPower fuel (splice mat) exp)
+
+||| Staged evaluation of matrix power:
+public export
+evalStagedMatrixPower : Num a => (fuel : Nat) -> {n : Nat} -> Lift (Vect n (Vect n a)) -> Nat -> Vect n (Vect n a)
+evalStagedMatrixPower fuel mat exp = splice (stagedMatrixPower fuel mat exp)
 
 ||| Converts a 2x2 matrix of BoxInt into a Maxel representation.
 public export
@@ -112,5 +157,10 @@ vect2x2ToMaxel [[m11, m12], [m21, m22]] =
 
 ||| Staged 2x2 companion Maxel multiplication evaluating straight-line scalar dot products:
 public export
-stagedCompanion2x2Mul : Lift (Vect 2 (Vect 2 BoxInt)) -> Lift (Vect 2 (Vect 2 BoxInt)) -> Maxel
-stagedCompanion2x2Mul mA mB = vect2x2ToMaxel (stagedMatrixMul mA mB)
+stagedCompanion2x2Mul : Lift (Vect 2 (Vect 2 BoxInt)) -> Lift (Vect 2 (Vect 2 BoxInt)) -> Code Maxel
+stagedCompanion2x2Mul mA mB = quote (vect2x2ToMaxel (evalStagedMatrixMul mA mB))
+
+||| Staged evaluation of 2x2 companion Maxel multiplication:
+public export
+evalStagedCompanion2x2Mul : Lift (Vect 2 (Vect 2 BoxInt)) -> Lift (Vect 2 (Vect 2 BoxInt)) -> Maxel
+evalStagedCompanion2x2Mul mA mB = splice (stagedCompanion2x2Mul mA mB)

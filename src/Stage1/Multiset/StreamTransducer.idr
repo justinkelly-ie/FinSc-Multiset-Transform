@@ -59,18 +59,22 @@ primeAdjunctionStreamTransducer chain state = applyPrimeAdjunctionPushforward ch
 -- 3. STAGED STREAM HYLOMORPHISMS & MASS CONSERVATION PROOFS
 --------------------------------------------------------------------------------
 
-||| Generates an index list of length n for stream partitioning.
+||| Generates a deforested stream of n index ticks [0, n - 1] in O(1) auxiliary registers.
 public export
-generateIndices : Nat -> List Nat
-generateIndices Z = []
-generateIndices (S k) = generateIndices k ++ [k]
+streamIndices : Nat -> FusedStream Nat
+streamIndices limit = unfoldStream next 0
+  where
+    next : Nat -> Step Nat Nat
+    next curr =
+      if curr >= limit then Done
+      else Yield curr (S curr)
 
 ||| Deforested stream evaluation of total mass conservation over N multiset dynamics iterations
 ||| using explicit 2LTT quoteOnSeq and spliceOnSeqToStream combinators.
 public export
 fusedMultisetStreamTotalMass : Fuel -> OnSeq BoxInt -> Nat -> BoxInt
 fusedMultisetStreamTotalMass f seq steps =
-  let strm         = stream (generateIndices steps)
+  let strm         = streamIndices steps
       strmStencils = mapStream (onSeqSpatialStencil seq) strm
       strmMasses   = transduceStream multisetStreamTransducer strmStencils
   in foldStreamFuel f addBox (intToBoxInt 0) strmMasses

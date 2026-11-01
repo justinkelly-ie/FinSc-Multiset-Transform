@@ -68,9 +68,11 @@ Eq TriadQuadrance where
 public export
 pythagoreanFixedPoint : (x : BoxInt) -> (y : BoxInt) -> TriadQuadrance
 pythagoreanFixedPoint x y =
-  let b = (x * x) + (y * y)
-      r = (x * x) - (y * y)
-      g = intToBoxInt 2 * x * y
+  let x2 = mulBox x x
+      y2 = mulBox y y
+      b  = addBox x2 y2
+      r  = subBox x2 y2
+      g  = mulBox (intToBoxInt 2) (mulBox x y)
   in MkTriadQuadrance b r g
 
 ||| Maps a cosmological scale index k in [0, 136] to a primitive dynamic Pythagorean coordinate (x_k, y_k).
@@ -102,10 +104,15 @@ auditDynamicEpochTriadIdentityProof k =
   in boxEq lhs rhs
 
 ||| The canonical Pythagorean Fixed Point (4, 3) generating the fundamental triad (25, 7, 24).
-||| Deprecated: Prefer `epochTriadQuadrance k` for dynamic multi-epoch scaling.
 public export
 canonicalPythagoreanTriad : TriadQuadrance
-canonicalPythagoreanTriad = epochTriadQuadrance 0
+canonicalPythagoreanTriad = pythagoreanFixedPoint (intToBoxInt 4) (intToBoxInt 3)
+
+||| Compile-time proof witness: The canonical (4, 3) Pythagorean Triad definitionally
+||| reduces to the exact Wildberger chromogeometric quadrance triple (25, 7, 24).
+public export
+0 prfCanonicalTriadDefinitional : Stage1.Multiset.PrimordialUnfolding.canonicalPythagoreanTriad = MkTriadQuadrance (MkBoxInt 25) (MkBoxInt 7) (MkBoxInt 24)
+prfCanonicalTriadDefinitional = Refl
 
 ||| Boolean audit proving the canonical (4, 3) point satisfies the exact Three-Fold Spread Identity:
 ||| Q_Blue^2 == Q_Red^2 + Q_Green^2 (25^2 = 7^2 + 24^2, 625 = 49 + 576).

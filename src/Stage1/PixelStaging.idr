@@ -12,15 +12,20 @@ import Stage1.TypeTheory.TwoLevel
 ------------------------------------------------------------------------
 
 ||| 2LTT Staged Pixel Multiplication: Pre-evaluates non-linear pixel multiplication at Stage 1 (U_1)
-||| and splices out the resulting Pixel down to Stage 0 (U_0).
+||| and returns reified Code at Level 1.
 %inline public export
-stagedPixelMul : Eq a => Lift (Pixel metric a) -> Lift (Pixel metric a) -> Maybe (Pixel metric a)
-stagedPixelMul p1 p2 = mulPixel (splice p1) (splice p2)
+stagedPixelMul : Eq a => Lift (Pixel metric a) -> Lift (Pixel metric a) -> Code (Maybe (Pixel metric a))
+stagedPixelMul p1 p2 = quote (mulPixel (splice p1) (splice p2))
+
+||| Staged evaluation of pixel multiplication:
+%inline public export
+evalStagedPixelMul : Eq a => Lift (Pixel metric a) -> Lift (Pixel metric a) -> Maybe (Pixel metric a)
+evalStagedPixelMul p1 p2 = splice (stagedPixelMul p1 p2)
 
 ||| QTT 0 Erased Proof Witness: Staged Pixel Multiplication Invariant
 public export
 0 prfStagedPixelMul : Eq a => (p1 : Pixel metric a) -> (p2 : Pixel metric a) ->
-                      stagedPixelMul (quote p1) (quote p2) = mulPixel p1 p2
+                      splice (stagedPixelMul (quote p1) (quote p2)) = mulPixel p1 p2
 prfStagedPixelMul _ _ = Refl
 
 ------------------------------------------------------------------------
@@ -29,14 +34,19 @@ prfStagedPixelMul _ _ = Refl
 
 ||| 2LTT Staged Canonical CoordCell 2 Unrolled Multiplication.
 public export
-stagedCoordCellMul2D : Lift (CoordCell 2) -> Lift (CoordCell 2) -> Lift (CoordCell 2)
+stagedCoordCellMul2D : Lift (CoordCell 2) -> Lift (CoordCell 2) -> Code (CoordCell 2)
 stagedCoordCellMul2D = stagedUnrollMul 2
 
 ||| 2LTT Staged Universal Coordinate Cell Translation:
 ||| Translates a CellMultiset by a CoordCell offset using 2LTT staging.
 public export
-stagedTranslateCell : {dim : Nat} -> Lift (CoordCell dim) -> Lift (CellMultiset dim) -> Lift (CellMultiset dim)
+stagedTranslateCell : {dim : Nat} -> Lift (CoordCell dim) -> Lift (CellMultiset dim) -> Code (CellMultiset dim)
 stagedTranslateCell qc qm = quote (translateCell (splice qc) (splice qm))
+
+||| Staged evaluation of coordinate cell translation:
+public export
+evalStagedTranslateCell : {dim : Nat} -> Lift (CoordCell dim) -> Lift (CellMultiset dim) -> CellMultiset dim
+evalStagedTranslateCell qc qm = splice (stagedTranslateCell qc qm)
 
 ||| QTT 0 Erased Proof Witness: Staged Cell Translation Invariant
 public export
