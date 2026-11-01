@@ -75,24 +75,36 @@ pythagoreanFixedPoint x y =
       g  = mulBox (intToBoxInt 2) (mulBox x y)
   in MkTriadQuadrance b r g
 
-||| Maps a cosmological scale index k in [0, 136] to a primitive dynamic Pythagorean coordinate (x_k, y_k).
-||| Base epoch 0 is the canonical (4, 3) fixed point.
+||| Maps a cosmological scale index k in [0, 136] and super-epoch cycle to a primitive dynamic Pythagorean coordinate (x_k, y_k).
+||| Base epoch 0 of super-epoch 0 is the canonical (4, 3) fixed point.
+||| Higher super-epochs inherit phase precession from the previous cycle eon bounce.
 public export
-epochPythagoreanCoordinate : Nat -> (BoxInt, BoxInt)
-epochPythagoreanCoordinate k =
+epochPythagoreanCoordinateReentrant : (superEp : Nat) -> (k : Nat) -> (BoxInt, BoxInt)
+epochPythagoreanCoordinateReentrant superEp k =
   let kInt = cast {to = Integer} k
-      m = 4 + (kInt `mod` 137)
-      n = 3 + ((kInt * 2) `mod` 137)
+      sInt = cast {to = Integer} superEp
+      m = 4 + ((kInt + (sInt * 11)) `mod` 137)
+      n = 3 + (((kInt * 2) + (sInt * 7)) `mod` 137)
       x = if m > n then m else n + 1
       y = if m > n then n else m
   in (intToBoxInt x, intToBoxInt y)
 
-||| Computes the dynamic TriadQuadrance at cosmological epoch index k.
+||| Canonical single-eon projection for super-epoch 0.
+public export
+epochPythagoreanCoordinate : Nat -> (BoxInt, BoxInt)
+epochPythagoreanCoordinate = epochPythagoreanCoordinateReentrant 0
+
+||| Computes the dynamic TriadQuadrance at cosmological epoch index k and super-epoch.
+public export
+epochTriadQuadranceReentrant : (superEp : Nat) -> (k : Nat) -> TriadQuadrance
+epochTriadQuadranceReentrant superEp k =
+  let (x, y) = epochPythagoreanCoordinateReentrant superEp k
+  in pythagoreanFixedPoint x y
+
+||| Dynamic TriadQuadrance at cosmological epoch index k (super-epoch 0).
 public export
 epochTriadQuadrance : Nat -> TriadQuadrance
-epochTriadQuadrance k =
-  let (x, y) = epochPythagoreanCoordinate k
-  in pythagoreanFixedPoint x y
+epochTriadQuadrance = epochTriadQuadranceReentrant 0
 
 ||| Proves that the dynamic TriadQuadrance satisfies Q_Blue^2 == Q_Red^2 + Q_Green^2 for any epoch k.
 public export
