@@ -13,6 +13,7 @@ import Data.Fuel
 import Data.List
 import Data.Vect
 import Stage1.MultisetTree
+import Stage1.Carrier.SquareMaxel
 
 %default total
 
@@ -36,6 +37,11 @@ companionMaxel2D c0 c1 =
       c0Edge = if boxIsZero c0 then emptyCellMultiset else singletonCell (mkCell2 1 2) c0
       c1Edge = if boxIsZero c1 then emptyCellMultiset else singletonCell (mkCell2 2 2) c1
   in baseShift <+> c0Edge <+> c1Edge
+
+||| Constructs a 2x2 companion SquareMaxel 2 for monic quadratic polynomial P(x) = x^2 - c1*x - c0.
+public export
+companionSquareMaxel2D : BoxInt -> BoxInt -> SquareMaxel 2
+companionSquareMaxel2D c0 c1 = MkSquareMaxel (companionMaxel2D c0 c1)
 
 ||| Natural transformation eta from a quadratic StreamPolynumber to its 2D companion Maxel.
 ||| Extracts the c0 (degree 0) and c1 (degree 1) coefficients from the sparse stream.
@@ -74,6 +80,12 @@ companionMaxelND (S (S k)) coeffs =
         in colEntries (S i) cs acc'
       tSub = subDiag 0 (S k) emptyCellMultiset
   in colEntries 0 coeffs tSub
+
+||| Constructs a type-indexed SquareMaxel n companion matrix for monic polynomial:
+||| P(x) = x^n - sum_{i=0}^{n-1} c_i x^i.
+public export
+companionSquareMaxelND : (n : Nat) -> Vect n BoxInt -> SquareMaxel n
+companionSquareMaxelND n coeffs = MkSquareMaxel (companionMaxelND n coeffs)
 
 ||| Generalized natural transformation eta from a degree-d StreamPolynumber to its d x d companion Maxel.
 ||| Emits subdiagonal 1s and folds stream coefficients directly into the rightmost column in a single pass (Rule 04 §8).
