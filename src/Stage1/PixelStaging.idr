@@ -28,6 +28,24 @@ public export
                       splice (stagedPixelMul (quote p1) (quote p2)) = mulPixel p1 p2
 prfStagedPixelMul _ _ = Refl
 
+||| 2LTT Staged Token-Based Pixel Multiplication (Rule 03 §6):
+||| Evaluates directional token annihilation [A, B] · [B, C] = [A, C] at Stage 1 (U_1)
+||| and emits reified Code at Level 1.
+public export
+stagedCoordCellMulTokens : Lift (CoordCell 2) -> Lift (CoordCell 2) -> Code (Maybe (CoordCell 2))
+stagedCoordCellMulTokens qp1 qp2 = quote (mulPixelTokens (splice qp1) (splice qp2))
+
+||| Staged evaluation of token-based pixel multiplication:
+public export
+evalStagedCoordCellMulTokens : Lift (CoordCell 2) -> Lift (CoordCell 2) -> Maybe (CoordCell 2)
+evalStagedCoordCellMulTokens qp1 qp2 = splice (stagedCoordCellMulTokens qp1 qp2)
+
+||| QTT 0 Erased Proof Witness: Staged Token Pixel Multiplication Invariant
+public export
+0 prfStagedCoordCellMulTokens : (p1 : CoordCell 2) -> (p2 : CoordCell 2) ->
+                               splice (stagedCoordCellMulTokens (quote p1) (quote p2)) = mulPixelTokens p1 p2
+prfStagedCoordCellMulTokens _ _ = Refl
+
 ------------------------------------------------------------------------
 -- 2LTT STAGED UNROLLED COORDCELL OPERATIONS
 ------------------------------------------------------------------------
