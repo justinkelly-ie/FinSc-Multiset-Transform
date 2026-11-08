@@ -186,10 +186,15 @@ Eq BiomoduleToken where
 -- 6. INDIVIDUAL SCALE TRANSFORMS (T1, T2, T3, T4)
 ------------------------------------------------------------------------
 
+||| Normalization fraction for the Elliptic 27-state subatomic quark confinement scale: 1 / ellipticLatticeCapacity.
+public export
+subatomicLatticeNormalization : UnixelFraction
+subatomicLatticeNormalization = mkUnixelFraction (intToBoxInt 1) (cast ellipticLatticeCapacity)
+
 ||| T1: Quark Color Charges -> Hadron Nucleon Tokens
 public export
 t1_QuarkToHadron : MaxelTransform ColorCharge HadronToken
-t1_QuarkToHadron = mkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxInt 1) 27)
+t1_QuarkToHadron = mkMaxelTransform EllipticSector subatomicLatticeNormalization
   [ ((RedColor, ProtonToken), intToBoxInt 1)
   , ((GreenColor, ProtonToken), intToBoxInt 1)
   , ((BlueColor, ProtonToken), intToBoxInt 1)
@@ -198,7 +203,7 @@ t1_QuarkToHadron = mkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxIn
 ||| T1_Full: Full Subatomic Particles (Quarks, Leptons) -> Hadron & Atomic Tokens
 public export
 t1_SubatomicToHadron : MaxelTransform SubatomicParticle HadronToken
-t1_SubatomicToHadron = mkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxInt 1) 27)
+t1_SubatomicToHadron = mkMaxelTransform EllipticSector subatomicLatticeNormalization
   [ ((QuarkToken UpQuark, ProtonToken), intToBoxInt 2)
   , ((QuarkToken DownQuark, ProtonToken), intToBoxInt 1)
   , ((QuarkToken UpQuark, NeutronToken), intToBoxInt 1)
@@ -240,7 +245,7 @@ t4_MoleculeToBiomodule = mkMaxelTransform EllipticSector (mkUnixelFraction (intT
 ||| Intermediate T12 = T2 ∘ T1: Quarks -> Atoms
 public export
 t12_QuarkToAtom : MaxelTransform ColorCharge AtomToken
-t12_QuarkToAtom = mkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxInt 1) 27)
+t12_QuarkToAtom = mkMaxelTransform EllipticSector subatomicLatticeNormalization
   [ ((RedColor, HydrogenToken), intToBoxInt 1)
   , ((GreenColor, HydrogenToken), intToBoxInt 1)
   , ((BlueColor, HydrogenToken), intToBoxInt 1)
@@ -249,7 +254,7 @@ t12_QuarkToAtom = mkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxInt
 ||| Intermediate T123 = T3 ∘ T12: Quarks -> Molecules
 public export
 t123_QuarkToMolecule : MaxelTransform ColorCharge MoleculeToken
-t123_QuarkToMolecule = mkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxInt 1) 27)
+t123_QuarkToMolecule = mkMaxelTransform EllipticSector subatomicLatticeNormalization
   [ ((RedColor, WaterMoleculeToken), intToBoxInt 1)
   , ((GreenColor, WaterMoleculeToken), intToBoxInt 1)
   , ((BlueColor, WaterMoleculeToken), intToBoxInt 1)
@@ -263,7 +268,7 @@ tCosmicHadronizationPipeline = t1_QuarkToHadron
 ||| Condensed & Living Matter Branch Pipeline: Quarks -> Biomodules (Observer Epoch k=38)
 public export
 tCondensedMatterPipeline : MaxelTransform ColorCharge BiomoduleToken
-tCondensedMatterPipeline = mkMaxelTransform EllipticSector (mkUnixelFraction (intToBoxInt 1) 27)
+tCondensedMatterPipeline = mkMaxelTransform EllipticSector subatomicLatticeNormalization
   [ ((RedColor, HydratedCellToken), intToBoxInt 1)
   , ((GreenColor, HydratedCellToken), intToBoxInt 1)
   , ((BlueColor, HydratedCellToken), intToBoxInt 1)
