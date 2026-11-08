@@ -606,3 +606,39 @@ auditDynamicScalePipelineRegulatedProof =
      (totalQuadSectorCapacity stepScale13To39.quadBudget == 39) &&
      (boxHeight m1 > 0) && (boxHeight m2 > 0) && (boxHeight m3 > 0)
 
+------------------------------------------------------------------------
+-- 10. THE 7 COSMOLOGICAL PHASES OF CONSTRUCTIVE MATTER (Rule 03 §4)
+------------------------------------------------------------------------
+
+||| The 7 Tiers of Matter Emergence across Cosmological Epochs.
+public export
+data MatterPhase = PhaseQuarkHadronic     -- 1. Quark Confinement to Nucleons (27 tokens)
+                 | PhaseNuclearAlpha      -- 2. Stellar Helium-4 Fusion (108 tokens)
+                 | PhaseStellarNucleo     -- 3. Triple-Alpha Carbon-12 Synthesis (324 tokens)
+                 | PhasePlasmaAtomic      -- 4. Recombination Neutral Atoms
+                 | PhaseMolecularBonding  -- 5. Aqueous Hydrogen-Bonding Networks (H2O)
+                 | PhaseBioenergeticATP   -- 6. Pyrophosphate ATP Coupling (Ground State 210)
+                 | PhaseMacromolecularDNA -- 7. Homochiral Watson-Crick Base Pairing
+
+public export
+Eq MatterPhase where
+  PhaseQuarkHadronic     == PhaseQuarkHadronic     = True
+  PhaseNuclearAlpha      == PhaseNuclearAlpha      = True
+  PhaseStellarNucleo     == PhaseStellarNucleo     = True
+  PhasePlasmaAtomic      == PhasePlasmaAtomic      = True
+  PhaseMolecularBonding  == PhaseMolecularBonding  = True
+  PhaseBioenergeticATP   == PhaseBioenergeticATP   = True
+  PhaseMacromolecularDNA == PhaseMacromolecularDNA = True
+  _                      == _                      = False
+
+public export
+Show MatterPhase where
+  show PhaseQuarkHadronic     = "1.QuarkHadronic(27)"
+  show PhaseNuclearAlpha      = "2.NuclearAlpha(108)"
+  show PhaseStellarNucleo     = "3.StellarNucleo(324)"
+  show PhasePlasmaAtomic      = "4.PlasmaAtomic"
+  show PhaseMolecularBonding  = "5.MolecularBonding"
+  show PhaseBioenergeticATP   = "6.BioenergeticATP(210)"
+  show PhaseMacromolecularDNA = "7.MacromolecularDNA"
+
+
