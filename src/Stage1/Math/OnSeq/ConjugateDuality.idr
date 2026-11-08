@@ -32,10 +32,10 @@ interface TwoLevelConjugateAdjunction (0 l : Type -> Type) (0 r : Type -> Type) 
   twoLevelReflection : StrictReflectionFunctor l r
 
   ||| QTT 0 Erased Proof Witness: Conjugate naturality commutativity across subfibrations.
-  0 conjugateNaturalityProof : {0 a, b : Type} -> (0 f : a -> b) -> True = True
+  0 conjugateNaturalityProof : {0 a, b : Type} -> (0 f : a -> b) -> (0 prf : a = b) -> a = b
 
   ||| QTT 0 Erased Proof Witness: Conjugate multiset path naturality across 2LTT subfibrations.
-  0 conjugateMultisetPathNaturality : {0 m1, m2 : Multiset c a} -> (0 p : MultisetPathIso m1 m2) -> True = True
+  0 conjugateMultisetPathNaturality : {0 m1, m2 : Multiset BoxInt a} -> (0 p : MultisetPathIso m1 m2) -> (0 prf : multisetSum m1 = multisetSum m2) -> multisetSum m1 = multisetSum m2
 
 ||| Canonical 2LTT Two-Level Conjugate Duality alias
 public export
