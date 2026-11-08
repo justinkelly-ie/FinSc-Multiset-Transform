@@ -608,12 +608,12 @@ gohAuxiliarySupportTree {deg = (S Z)} (Phi coeffs) =
 gohAuxiliarySupportTree {deg = (S (S k))} (Phi coeffs) =
   let subdiag = buildSubdiag (S k)
       feedback = buildFeedback 0 coeffs
-  in subdiag <+> feedback
+  in mergeCellTokenTrees subdiag feedback
   where
     buildSubdiag : Nat -> MultisetTree Pixel
     buildSubdiag Z = Leaf
     buildSubdiag (S m) =
-      insertTokenTree (mkPixel (S (S m)) (S m)) 1 (buildSubdiag m)
+      insertCellTokenTree (mkPixel (S (S m)) (S m)) 1 (buildSubdiag m)
 
     buildFeedback : Nat -> Vect n UnixelFraction -> MultisetTree Pixel
     buildFeedback _ [] = Leaf
@@ -623,7 +623,7 @@ gohAuxiliarySupportTree {deg = (S (S k))} (Phi coeffs) =
          else let rest = buildFeedback (S r) cs
               in if boxIsZero c.num
                     then rest
-                    else insertTokenTree (mkPixel (S r) (S (S k))) 1 rest
+                    else insertCellTokenTree (mkPixel (S r) (S (S k))) 1 rest
 
 ||| Direct sum of GohAuxiliary companion trees across a GohMultiset ledger.
 ||| Offsets each subsequent factor along the diagonal by the accumulated degree sum.
@@ -633,19 +633,19 @@ gohMultisetSupportTreeOffset _ EmptyBag = Leaf
 gohMultisetSupportTreeOffset offset (AddFactor {deg} f rest) =
   let treeF = shiftSupportTree offset (gohAuxiliarySupportTree f)
       restTree = gohMultisetSupportTreeOffset (offset + deg) rest
-  in treeF <+> restTree
+  in mergeCellTokenTrees treeF restTree
 gohMultisetSupportTreeOffset offset (AddFactorM {deg} f m rest) =
   let count = boxNatToNat m
       (blockTree, newOffset) = repeatDirectSum offset count
       restTree = gohMultisetSupportTreeOffset newOffset rest
-  in blockTree <+> restTree
+  in mergeCellTokenTrees blockTree restTree
   where
     repeatDirectSum : Nat -> Nat -> (MultisetTree Pixel, Nat)
     repeatDirectSum off Z = (Leaf, off)
     repeatDirectSum off (S countRem) =
       let thisTree = shiftSupportTree off (gohAuxiliarySupportTree f)
           (restSum, endOff) = repeatDirectSum (off + deg) countRem
-      in (thisTree <+> restSum, endOff)
+      in (mergeCellTokenTrees thisTree restSum, endOff)
 
 ||| O(log N) AVL MultisetTree representation of the companion support pixels
 ||| for an entire GohMultiset factorization tree.

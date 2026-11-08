@@ -70,12 +70,12 @@ companionMaxelND (S (S k)) coeffs =
       subDiag : (i : Nat) -> (count : Nat) -> Maxel -> Maxel
       subDiag _ Z acc = acc
       subDiag i (S rem) acc =
-        subDiag (S i) rem (setBoxTree (mkCell2 (i + 2) (i + 1)) (intToBoxInt 1) acc)
+        subDiag (S i) rem (setCellMultiset (mkCell2 (i + 2) (i + 1)) (intToBoxInt 1) acc)
       colEntries : (i : Nat) -> Vect len BoxInt -> Maxel -> Maxel
       colEntries _ [] acc = acc
       colEntries i (c :: cs) acc =
         let acc' = if boxIsNonZero c
-                     then setBoxTree (mkCell2 (i + 1) dim) c acc
+                     then setCellMultiset (mkCell2 (i + 1) dim) c acc
                      else acc
         in colEntries (S i) cs acc'
       tSub = subDiag 0 (S k) emptyCellMultiset
@@ -100,12 +100,12 @@ companionMaxelFromPolyDeg (S (S k)) p =
       subDiag : (i : Nat) -> (count : Nat) -> Maxel -> Maxel
       subDiag _ Z acc = acc
       subDiag i (S rem) acc =
-        subDiag (S i) rem (setBoxTree (mkCell2 (i + 2) (i + 1)) (intToBoxInt 1) acc)
+        subDiag (S i) rem (setCellMultiset (mkCell2 (i + 2) (i + 1)) (intToBoxInt 1) acc)
       tSub = subDiag 0 (S k) emptyCellMultiset
       fuel = dim * 2 + 10
       colFold = FS.foldStreamNat fuel (\acc, (d, w) =>
                   if d < dim && boxIsNonZero w
-                    then setBoxTree (mkCell2 (d + 1) dim) w acc
+                    then setCellMultiset (mkCell2 (d + 1) dim) w acc
                     else acc) tSub p
   in colFold
 

@@ -36,9 +36,9 @@ totalCosmicMultisetBudget (MkCosmicMultiset vm de dm) =
 public export
 stateToCosmicMultiset : {vm, de, dm : Nat} -> Stage0.UniverseState.UniverseState vm de dm -> CosmicMultiset
 stateToCosmicMultiset (MkUniverseState vmVect deVect dmVect) =
-  let vmTree = foldVectWithFin (\idx, w, acc => if boxIsZero w then acc else setBoxTree (mkCell3 (finToNat idx + 1) 1 1) w acc) BoxLeaf vmVect
-      deTree = foldVectWithFin (\idx, w, acc => if boxIsZero w then acc else setBoxTree (mkCell2 (finToNat idx + 1) 1) w acc) BoxLeaf deVect
-      dmTree = foldVectWithFin (\idx, w, acc => if boxIsZero w then acc else setBoxTree (mkCell1 (finToNat idx + 1)) w acc) BoxLeaf dmVect
+  let vmTree = foldVectWithFin (\idx, w, acc => if boxIsZero w then acc else setCellMultiset (mkCell3 (finToNat idx + 1) 1 1) w acc) BoxLeaf vmVect
+      deTree = foldVectWithFin (\idx, w, acc => if boxIsZero w then acc else setCellMultiset (mkCell2 (finToNat idx + 1) 1) w acc) BoxLeaf deVect
+      dmTree = foldVectWithFin (\idx, w, acc => if boxIsZero w then acc else setCellMultiset (mkCell1 (finToNat idx + 1)) w acc) BoxLeaf dmVect
   in MkCosmicMultiset vmTree deTree dmTree
   where
     foldVectWithFin : {n : Nat} -> (Fin n -> a -> acc -> acc) -> acc -> Vect n a -> acc

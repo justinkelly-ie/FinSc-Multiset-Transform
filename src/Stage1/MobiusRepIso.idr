@@ -7,6 +7,7 @@ module Stage1.MobiusRepIso
 
 import Stage0.BoxInt
 import Stage0.Multiset
+import Stage1.FourGeometries
 import Stage1.Multiset.PrimordialUnfolding
 import Stage1.PhysicalUniverse.Stratification
 

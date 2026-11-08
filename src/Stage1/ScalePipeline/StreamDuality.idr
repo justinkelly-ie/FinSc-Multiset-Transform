@@ -141,10 +141,6 @@ Eq Boxel where
   (MkBoxel c1 _) == (MkBoxel c2 _) = c1 == c2
 
 public export
-Ord Boxel where
-  compare (MkBoxel c1 _) (MkBoxel c2 _) = compare c1 c2
-
-public export
 gridSize : Int
 gridSize = 8
 

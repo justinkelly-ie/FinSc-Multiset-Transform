@@ -196,7 +196,7 @@ actTransformVexel (MkMaxelTransform _ _ (MkBox tPairs)) v =
   foldl (\acc, ((uSrc, uTgt), wT) =>
     let wS = lookupCellMultiset uSrc v
     in if boxIsZero (wS * wT) then acc
-       else setBoxTree uTgt (lookupCellMultiset uTgt acc + (wS * wT)) acc) emptyCellMultiset tPairs
+       else setCellMultiset uTgt (lookupCellMultiset uTgt acc + (wS * wT)) acc) emptyCellMultiset tPairs
 
 ||| Direct pushforward action of a MaxelTransform on a 2D Maxel matrix.
 public export
@@ -205,7 +205,7 @@ actTransformMaxel (MkMaxelTransform _ _ (MkBox tPairs)) m =
   foldl (\acc, ((pSrc, pTgt), wT) =>
     let wM = lookupCellMultiset pSrc m
     in if boxIsZero (wM * wT) then acc
-       else setBoxTree pTgt (lookupCellMultiset pTgt acc + (wM * wT)) acc) emptyCellMultiset tPairs
+       else setCellMultiset pTgt (lookupCellMultiset pTgt acc + (wM * wT)) acc) emptyCellMultiset tPairs
 
 ||| Converts a 2D Maxel matrix directly into a MaxelTransform without passing through raw List pairs.
 public export
@@ -220,7 +220,7 @@ transformToMaxel : MaxelTransform Unixel Unixel -> Maxel
 transformToMaxel (MkMaxelTransform _ _ (MkBox tPairs)) =
   foldl (\acc, ((u1, u2), w) =>
     let p = unixelPairToPixel u1 u2
-    in if boxIsZero w then acc else setBoxTree p (lookupCellMultiset p acc + w) acc) emptyCellMultiset tPairs
+    in if boxIsZero w then acc else setCellMultiset p (lookupCellMultiset p acc + w) acc) emptyCellMultiset tPairs
 
 ------------------------------------------------------------------------
 -- 5. MAXEL PIXEL FUSION COMPOSITION

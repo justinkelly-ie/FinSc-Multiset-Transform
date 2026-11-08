@@ -106,6 +106,20 @@ maxelTermsCount : Maxel -> Nat
 maxelTermsCount t = boxTreeSize t
 
 
+||| Audits Dual Number Discrete Calculus & Multiplication:
+||| (3 + 2ε)(4 + 5ε) = 12 + 23ε, and ε² = 0.
+public export
+auditDualComplexMultiplicationProof : Bool
+auditDualComplexMultiplicationProof =
+  let d1 = dualNumber (intToBoxInt 3) (intToBoxInt 2)
+      d2 = dualNumber (intToBoxInt 4) (intToBoxInt 5)
+      prod = mulDual d1 d2
+      epsSq = mulDual epsilon epsilon
+  in dualReal prod == intToBoxInt 12 &&
+     dualEps prod == intToBoxInt 23 &&
+     dualReal epsSq == intToBoxInt 0 &&
+     dualEps epsSq == intToBoxInt 0
+
 ||| QTT 0 erased proof witness auditing exact Dual Number 3-term carrier structure (real, real-diagonal, eps-tangent).
 public export
 0 prfAutoDiff : maxelTermsCount (dualNumber (intToBoxInt 3) (intToBoxInt 4)) = the Nat 3

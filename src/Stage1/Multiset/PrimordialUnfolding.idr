@@ -6,12 +6,45 @@ module Stage1.Multiset.PrimordialUnfolding
 
 import Stage0.BoxInt
 import Stage0.Multiset
+import Stage0.Token
 import Stage1.UnixelFraction
 import Stage0.OnSeq.FusedStream
 import Stage1.FourGeometries
 import Stage1.UniverseState
 
 %default total
+
+--------------------------------------------------------------------------------
+-- 0. PRIMORDIAL GENERATOR & SPACETIME DIMENSION OBSERVABLES
+--------------------------------------------------------------------------------
+
+||| Spacetime manifold dimension (4 = 3 space + 1 time),
+||| grounded definitionally in the spacetime basis carrier cardinality (and fundamental geometries).
+%inline public export
+spacetimeDimensionNat : Nat
+spacetimeDimensionNat = spacetimeBasisDim
+
+||| Manifest spatial lattice dimension (3),
+||| grounded definitionally in the chromogeometric color charge basis carrier cardinality.
+%inline public export
+manifestSpatialDimensionNat : Nat
+manifestSpatialDimensionNat = manifestSpatialDim
+
+||| The primordial generator coordinate (x, y) observed from spacetime and spatial lattice dimensions:
+%inline public export
+primordialGeneratorNat : (Nat, Nat)
+primordialGeneratorNat = (spacetimeDimensionNat, manifestSpatialDimensionNat)
+
+||| Compile-time proof certifying that the primordial generator unifies all 4 Goh primes of 210:
+public export
+0 prfPrimordialGeneratorGohPrimes :
+  let x = fst primordialGeneratorNat
+      y = snd primordialGeneratorNat
+      qBlue = (x * x) + (y * y)
+      qRed  = minus (x * x) (y * y)
+      qGreen = 2 * x * y
+  in (qBlue = 25, qRed = 7, qGreen = 24)
+prfPrimordialGeneratorGohPrimes = (Refl, Refl, Refl)
 
 --------------------------------------------------------------------------------
 -- 1. SUBSTRATE CARRIER & ASYMMETRIC CAUSAL TOKENS
@@ -76,15 +109,17 @@ pythagoreanFixedPoint x y =
   in MkTriadQuadrance b r g
 
 ||| Maps a cosmological scale index k in [0, 136] and super-epoch cycle to a primitive dynamic Pythagorean coordinate (x_k, y_k).
-||| Base epoch 0 of super-epoch 0 is the canonical (4, 3) fixed point.
+||| Base epoch 0 of super-epoch 0 is observed from the primordial generator coordinate.
 ||| Higher super-epochs inherit phase precession from the previous cycle eon bounce.
 public export
 epochPythagoreanCoordinateReentrant : (superEp : Nat) -> (k : Nat) -> (BoxInt, BoxInt)
 epochPythagoreanCoordinateReentrant superEp k =
   let kInt = cast {to = Integer} k
       sInt = cast {to = Integer} superEp
-      m = 4 + ((kInt + (sInt * 11)) `mod` 137)
-      n = 3 + (((kInt * 2) + (sInt * 7)) `mod` 137)
+      baseX = cast {to = Integer} (fst primordialGeneratorNat)
+      baseY = cast {to = Integer} (snd primordialGeneratorNat)
+      m = baseX + ((kInt + (sInt * 11)) `mod` 137)
+      n = baseY + (((kInt * 2) + (sInt * 7)) `mod` 137)
       x = if m > n then m else n + 1
       y = if m > n then n else m
   in (intToBoxInt x, intToBoxInt y)
@@ -138,10 +173,13 @@ auditEpochSubstrateQuadranceIdentity superEp k =
       rhsSum = addBox (addBox triad.blueQ triad.redQ) twoQGreen
   in boxEq twoQSub rhsSum
 
-||| The canonical Pythagorean Fixed Point (4, 3) generating the fundamental triad (25, 7, 24).
-public export
+||| The canonical Pythagorean Fixed Point generating the fundamental triad (25, 7, 24),
+||| observed directly from the primordial generator coordinate (x=4, y=3):
+%inline public export
 canonicalPythagoreanTriad : TriadQuadrance
-canonicalPythagoreanTriad = pythagoreanFixedPoint (intToBoxInt 4) (intToBoxInt 3)
+canonicalPythagoreanTriad =
+  pythagoreanFixedPoint (natToBoxInt (fst primordialGeneratorNat))
+                        (natToBoxInt (snd primordialGeneratorNat))
 
 ||| Compile-time proof witness: The canonical (4, 3) Pythagorean Triad definitionally
 ||| reduces to the exact Wildberger chromogeometric quadrance triple (25, 7, 24).
@@ -164,6 +202,30 @@ public export
 bifurcateSubstrateTick : SubstrateToken -> TriadQuadrance
 bifurcateSubstrateTick (MkSubstrateToken loc _) =
   pythagoreanFixedPoint loc.coordX loc.coordY
+
+||| Bridges a SubstrateActionToken from Stage0.Token at epoch (superEp, k)
+||| into a located SubstrateToken on the 2D Pythagorean causal canvas.
+public export
+actionTokenToSubstrateToken : (superEp : Nat) -> (k : Nat) -> SubstrateActionToken -> SubstrateToken
+actionTokenToSubstrateToken superEp k (MkActionToken q) =
+  let (x, y) = epochPythagoreanCoordinateReentrant superEp k
+  in MkSubstrateToken (MkSubstrateCoord x y) q
+
+||| Strictly linear token bifurcation: Consumes a linear SubstrateActionToken,
+||| bridges it to a located SubstrateToken, and unfolds its 1 ➔ 3 TriadQuadrance
+||| alongside its causal action quantum q.
+public export
+bifurcateActionTokenLinear : (superEp : Nat) -> (k : Nat) -> (1 tok : LToken SubstrateActionToken) -> (TriadQuadrance, BoxInt)
+bifurcateActionTokenLinear superEp k (MkLToken actTok) =
+  let subTok = actionTokenToSubstrateToken superEp k actTok
+  in (bifurcateSubstrateTick subTok, subTok.entropyArrow)
+
+||| Audits that linear SubstrateActionToken bifurcation at epoch (0, 0) yields the canonical (25, 7, 24) triad and ΔS = 1.
+public export
+auditActionTokenBifurcationProof : Bool
+auditActionTokenBifurcationProof =
+  let (triad, q) = bifurcateActionTokenLinear 0 0 (MkLToken unitActionToken)
+  in triad == canonicalPythagoreanTriad && boxEq q (intToBoxInt 1)
 
 ||| Single-step stream transducer unfolding substrate tokens into TriadQuadrance states.
 public export
