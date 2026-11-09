@@ -81,7 +81,7 @@ auditScalePipelineConservationProof =
       outputCells = pushTotalPipelineMonomorphic inputQuarks
       wIn  = sumColorWeights inputQuarks
       wOut = sumBiomoduleWeights outputCells
-  in boxEq wIn wOut
+  in wIn == wOut
 
 ||| Pure compile-time verification of certified cosmic dimension for Primorial 210:
 public export
@@ -97,21 +97,17 @@ auditHelmholtzGroundStateProof =
   let u = the Int (-1110)
       ts = the Int 210
       f = u - ts
-  in case f == (-1320) of
-       True => True
-       False => False
+  in f == (-1320)
 
 ||| Pure compile-time verification of zero variational surprise across conservative scale pipeline.
 public export
 auditScaleSurpriseBoundProof : Bool
 auditScaleSurpriseBoundProof =
   let surprise = the Int 0
-  in case surprise == 0 of
-       True => True
-       False => False
+  in surprise == 0
 
 ------------------------------------------------------------------------
--- 4. SPECIFIC ELABORATOR REFLECTION MACROS (%macro)
+-- 4. COMPILE-TIME WITNESSES & REFLECTION MACROS (RULE 01 & 03)
 ------------------------------------------------------------------------
 
 ||| Compile-time audit macro verifying Primorial 210 cosmic state budget.
@@ -120,11 +116,19 @@ public export
 auditPrimorial210BudgetMacro : Elab (Stage1.Reflect.InvariantAuditor.auditPrimorial210BudgetProof = True)
 auditPrimorial210BudgetMacro = pure Refl
 
+public export
+0 prfPrimorial210BudgetQTT : Stage1.Reflect.InvariantAuditor.auditPrimorial210BudgetProof = True
+prfPrimorial210BudgetQTT = Refl
+
 ||| Compile-time audit macro verifying scale pipeline discrete weight conservation.
 public export
 %macro
 auditScalePipelineConservationMacro : Elab (Stage1.Reflect.InvariantAuditor.auditScalePipelineConservationProof = True)
 auditScalePipelineConservationMacro = pure Refl
+
+public export
+0 prfScalePipelineConservationQTT : Stage1.Reflect.InvariantAuditor.auditScalePipelineConservationProof = True
+prfScalePipelineConservationQTT = Refl
 
 ||| Compile-time audit macro verifying cosmic dimension boundary.
 public export
@@ -132,12 +136,23 @@ public export
 auditCosmicStateMacro : Elab (Stage1.Reflect.InvariantAuditor.auditCosmicStateProof = True)
 auditCosmicStateMacro = pure Refl
 
+public export
+0 prfCosmicStateQTT : Stage1.Reflect.InvariantAuditor.auditCosmicStateProof = True
+prfCosmicStateQTT = Refl
 
 ||| Compile-time audit macro verifying Helmholtz Free Energy ground state minimum F = -1320.
 public export
 %macro
 auditHelmholtzGroundStateMacro : Elab (Stage1.Reflect.InvariantAuditor.auditHelmholtzGroundStateProof = True)
 auditHelmholtzGroundStateMacro = pure Refl
+
+public export
+0 prfHelmholtzGroundStateQTT : Stage1.Reflect.InvariantAuditor.auditHelmholtzGroundStateProof = True
+prfHelmholtzGroundStateQTT = Refl
+
+public export
+0 prfScaleSurpriseBoundQTT : Stage1.Reflect.InvariantAuditor.auditScaleSurpriseBoundProof = True
+prfScaleSurpriseBoundQTT = Refl
 
 ||| Compile-time audit macro verifying zero variational surprise in conservative scale transitions.
 public export

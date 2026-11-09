@@ -73,9 +73,9 @@ composeScaleFunctor (MkScaleFunctor n2 m2 inv2) (MkScaleFunctor n1 m1 inv1) =
   MkScaleFunctor (n2 ++ " ∘ " ++ n1) (m2 * m1) (inv1 && inv2)
 
 public export
-infixr 9 <.>
-(<.>) : ScaleLawFunctor b c -> ScaleLawFunctor a b -> ScaleLawFunctor a c
-(<.>) = composeScaleFunctor
+infixr 9 <~>
+(<~>) : ScaleLawFunctor b c -> ScaleLawFunctor a b -> ScaleLawFunctor a c
+(<~>) = composeScaleFunctor
 
 ------------------------------------------------------------------------
 -- 3. CANONICAL FUNCTORS CONNECTING SUBSTRATE TO MANIFEST OBSERVABLES
@@ -116,6 +116,6 @@ prfToricToWatsonCrickPreservesInvariant = Refl
 public export
 0 prfFunctorCompositionScaleMultiplierAssociativity :
   (f1 : ScaleLawFunctor a b) -> (f2 : ScaleLawFunctor b c) -> (f3 : ScaleLawFunctor c d) ->
-  scaleMultiplier ((f3 <.> f2) <.> f1) = scaleMultiplier (f3 <.> (f2 <.> f1))
+  scaleMultiplier ((f3 <~> f2) <~> f1) = scaleMultiplier (f3 <~> (f2 <~> f1))
 prfFunctorCompositionScaleMultiplierAssociativity (MkScaleFunctor _ m1 _) (MkScaleFunctor _ m2 _) (MkScaleFunctor _ m3 _) =
   rewrite multAssociative m3 m2 m1 in Refl
