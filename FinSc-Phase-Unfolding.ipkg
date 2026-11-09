@@ -1,7 +1,7 @@
 package FinSc-Phase-Unfolding
 version = 0.3.2
 authors = "Justin Kelly"
-brief   = "Layer 1 Primordial Stream Unfolding (1 -> 3 -> 137), Möbius Phase Transition, and Stream Transducers."
+brief   = "Layer 2 Primordial Phase Unfolding (1 -> 3 -> 137), Cyclotomic Goh Fuel & QuadStream Pipeline"
 
 depends = FinSc-Multiset, FinSc-Metric-Substrate, base, linear
 sourcedir = "src"
